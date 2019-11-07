@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center"
+    android:background="@android:color/darker_gray"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+
+    <EditText
+        android:id="@+id/editText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="10dp"
+        android:background="@android:color/white"
+        android:ems="10"
+        android:hint="Dinero entregado"
+        android:inputType="number"
+        android:maxLength="8"
+        android:padding="10dp" />
+
+    <TableLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="10dp">
+
+        <TableRow
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+            <TextView
+                android:textSize="20sp"
+                android:layout_weight="1"
+                android:textColor="@android:color/background_dark"
+                android:text="Dinero entregado"/>
+
+            <TextView
+                android:id="@+id/entregado_id"
+                android:textSize="20sp"
+                android:layout_weight="1"
+                android:textColor="@android:color/background_dark"
+                android:text="$0"/>
+        </TableRow>
+
+        <TableRow
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+            <TextView
+                android:textSize="20sp"
+                android:layout_weight="1"
+                android:textColor="@android:color/background_dark"
+                android:text="Valor a pagar"/>
+
+            <TextView
+                android:id="@+id/valorPagar_id"
+                android:textSize="20sp"
+                android:layout_weight="1"
+                android:textColor="@android:color/background_dark"
+                android:text="$"/>
+        </TableRow>
+
+        <TableRow
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+            <TextView
+                android:textSize="20sp"
+                android:layout_weight="1"
+                android:textColor="@android:color/background_dark"
+                android:text="Cambio"/>
+
+            <TextView
+                android:id="@+id/cambio_id"
+                android:textSize="20sp"
+                android:layout_weight="1"
+                android:textColor="@android:color/background_dark"
+                android:text="$0"/>
+        </TableRow>
+
+    </TableLayout>
+
+    <Button
+        android:id="@+id/button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/btn_round_green"
+        android:text="Aceptar" />
+</LinearLayout>

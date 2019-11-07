@@ -1,0 +1,26 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="com.koiti.caja.MainActivity">
+    <item
+        android:id="@+id/printer"
+        android:orderInCategory="100"
+        android:title="Impresora"
+        android:icon="@drawable/ic_print"
+        app:showAsAction="always" />
+    <item
+        android:id="@+id/action_settings"
+        android:orderInCategory="100"
+        android:title="Ajustes"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_logout"
+        android:orderInCategory="100"
+        android:title="Cerrar Sesión"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_close"
+        android:orderInCategory="100"
+        android:title="Salir"
+        app:showAsAction="never" />
+</menu>
