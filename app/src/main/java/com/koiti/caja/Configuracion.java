@@ -1,8 +1,12 @@
 package com.koiti.caja;
 
 import android.annotation.SuppressLint;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.Intent;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 
@@ -13,6 +17,7 @@ import android.text.TextWatcher;
 import android.util.Log;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import android.view.View;
 import android.view.WindowManager;
@@ -21,13 +26,15 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
+import android.widget.Toast;
 
 import org.jumpmind.symmetric.android.SQLiteOpenHelperRegistry;
+import org.jumpmind.symmetric.android.SymmetricService;
 
 
 public class Configuracion extends AppCompatActivity implements AdapterView.OnItemSelectedListener {
     private Context context;
-    private Button out;
+    private Button out, sync;
     EditText codeInput, idInput, estacionInput, ipInput, nodeInput, nodegroupInput, publicadorInput,
             startNum, endNum, preFac, nextFac;
 
@@ -80,13 +87,15 @@ public class Configuracion extends AppCompatActivity implements AdapterView.OnIt
         publicadorInput.addTextChangedListener(stringTextWatcher);
 
         out = findViewById(R.id.exit_Id);
+        sync = findViewById(R.id.sync_Id);
         out.setOnClickListener(mListener);
+        sync.setOnClickListener(mListener);
 
         int code = config.getValueInt("code", context);
         int id = config.getValueInt("id", context);
         int start = config.getValueInt("start", context);
         int end = config.getValueInt("end", context);
-        int next = config.getValueInt("next", context)+start;
+        int next = config.getValueInt("next", context) + start;
         String estacion = config.getValueString("estacion", context);
         String prefijo = config.getValueString("prefijo", context);
 
@@ -139,6 +148,9 @@ public class Configuracion extends AppCompatActivity implements AdapterView.OnIt
             switch (v.getId()) {
                 case R.id.exit_Id:
                     finish();
+                    break;
+                case R.id.sync_Id:
+                    sincronizar();
                     break;
             }
         }
@@ -225,39 +237,46 @@ public class Configuracion extends AppCompatActivity implements AdapterView.OnIt
         // Another interface callback
     }
 
-    @Override
-    public void finish() {
-        SQLiteDatabase db = SQLiteOpenHelperRegistry.lookup(DbCajaProvider.DATABASE_NAME).getWritableDatabase();
-
-        ContentValues registerServer = new ContentValues();
-        ContentValues registerAndroid = new ContentValues();
-
+    public void sincronizar() {
         ip = config.getValueString("ip", context);
         node = config.getValueString("node", context);
         publicador = config.getValueString("publicador", context);
         nodeGroup = config.getValueString("group", context);
 
-
         String url = "http://" + ip + ":31415/sync/" + publicador;
 
         config.save(url, "url", context);
 
-        registerServer.put("sync_url", url);
+        SQLiteDatabase db = SQLiteOpenHelperRegistry.lookup(DbCajaProvider.DATABASE_NAME).getWritableDatabase();
 
-        registerAndroid.put("node_id", node);
-        registerAndroid.put("external_id", node);
-        registerAndroid.put("node_group_id", nodeGroup);
+        Cursor c = db.rawQuery("SELECT name FROM sqlite_master WHERE type='table'", null);
+        List<String> tablas = new ArrayList<>();
 
+        while (c.moveToNext()) {
+            tablas.add(c.getString(0));
+        }
 
-        String updateSentenceServer = "database_type = " + "'MySQL'";
-        String updateSentenceAndroid = "database_type = " + "'sqlite'";
+        tablas.remove("sqlite_sequence");
+        tablas.remove("android_metadata");
 
-        db.update("sym_node", registerServer, updateSentenceServer, null);
-        db.update("sym_node", registerAndroid, updateSentenceAndroid, null);
+        c.close();
 
-        Log.d("ipSync", url);
+        for (String tabla : tablas) {
+            String dropQuery = "DROP TABLE IF EXISTS " + tabla;
+            db.execSQL(dropQuery);
+            Log.d("ipSync", tabla);
+        }
 
-        super.finish();
+        Toast.makeText(context, "Sincronizando...", Toast.LENGTH_SHORT).show();
+        Intent intent = new Intent(Configuracion.this, SymmetricService.class);
+        stopService(intent);
+
+        Intent mStartActivity = new Intent(context, MainActivity.class);
+        int mPendingIntentId = 123456;
+        PendingIntent mPendingIntent = PendingIntent.getActivity(context, mPendingIntentId, mStartActivity, PendingIntent.FLAG_CANCEL_CURRENT);
+        AlarmManager mgr = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+        mgr.set(AlarmManager.RTC, System.currentTimeMillis() + 100, mPendingIntent);
+        finish();
+        System.exit(0);
     }
-
 }

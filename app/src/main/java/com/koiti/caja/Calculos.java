@@ -87,6 +87,7 @@ public class Calculos {
             if (ldtEntrada.isAfter(ldtdesde)) {
                 if (ldtLiquidacion.isBefore(ldthasta)) {
                     int difMinutos = (int) Duration.between(ldtEntrada, ldtLiquidacion).toMinutes();
+                    if (difMinutos < 0) difMinutos = 0;
                     resultado += subsegmentos.getEntrada(tfa_codigo, tsgCodigoDb, difMinutos)[0];
                     Log.d("entradaAntes", difMinutos + "---->" + tsgCodigoDb + "---->" + resultado);
                     break;

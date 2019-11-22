@@ -101,5 +101,26 @@ public class Tarifas {
         return tdg;
     }
 
+    public String tdgSalida(String tfa_codigo) {
+
+        String tdg = "";
+
+        Cursor cursor = db.query(
+                "tb_tarifas",
+                new String[]{"tfa_tiempo_gracia_sal"},
+                "tfa_codigo" + " LIKE ?",
+                new String[]{tfa_codigo},
+                null,
+                null,
+                null);
+
+        while (cursor.moveToNext()) {
+            tdg = cursor.getString(cursor.getColumnIndex("tfa_tiempo_gracia_sal"));
+        }
+        cursor.close();
+
+        return tdg;
+    }
+
 }
 

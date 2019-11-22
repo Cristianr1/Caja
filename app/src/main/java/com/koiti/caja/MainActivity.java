@@ -51,6 +51,8 @@ public class MainActivity extends AppCompatActivity {
     private SimpleDateFormat date = new SimpleDateFormat("yyyy-MM-dd");
     @SuppressLint("SimpleDateFormat")
     private SimpleDateFormat dateH = new SimpleDateFormat("yyyy-MM-dd  HH:mm");
+    @SuppressLint("SimpleDateFormat")
+    private SimpleDateFormat formato = new SimpleDateFormat("mm");
     private String fechaHActual, fechaActual, usuario, fechaInicioSesion, estacion, prefijo, fechaEntrada, facturaNumero,
             vehId, tfaCodigo, tfaNombre, type;
     private int acumulador; //Acumulador de la factura
@@ -61,8 +63,8 @@ public class MainActivity extends AppCompatActivity {
     StringBuilder resultadoFinal = new StringBuilder("$");
     int resultadoAjuste = 0, numEntregado = 0, numCambio = 0;
     float vsubtotal, vimpuestos;
-    private Boolean active = false, print = false, cajaInicial;
-    private EditText moneyOpen, moneyClose;
+    private Boolean active = false, cajaInicial;
+    private EditText moneyOpen, moneyClose, money;
 
     private LocalDateTime ldtEntrada, ldtLiquidacion;
 
@@ -167,6 +169,9 @@ public class MainActivity extends AppCompatActivity {
         final Alertas alerta = new Alertas(context);
         int index;
 
+        final LocalDateTime fechaLiquidacion = LocalDateTime.now();//Fecha actual
+        final LocalDateTime fechaMaxSalidaTarjeta;
+
         if (active) {
             resultadoSubtotal.delete(1, resultadoSubtotal.length());
             resultadoImpuesto.delete(1, resultadoImpuesto.length());
@@ -207,10 +212,84 @@ public class MainActivity extends AppCompatActivity {
                                         type = "Bicicleta";
                                     }
 
-                                    ldtEntrada = LocalDateTime.of(datosB2[0] + 2000, datosB2[1], datosB2[2], datosB2[3], datosB2[4]);
-                                    liquidacionCaja(ldtEntrada, index);
+                                    ArrayList<String> tfacodigo = tarifas.tfaCodigo();
+                                    String tdgSalida = tarifas.tdgSalida(tfacodigo.get(index));
 
-                                    enableBox();
+                                    int minutosSalida = Integer.parseInt(tdgSalida.substring(tdgSalida.length() - 7, tdgSalida.length() - 5));
+
+                                    ldtEntrada = LocalDateTime.of(datosB2[0] + 2000, datosB2[1], datosB2[2], datosB2[3], datosB2[4]);
+
+                                    LocalDateTime fechaMaxSalida = fechaLiquidacion.plusMinutes(minutosSalida);//Fecha actual + tiempo maximo de salida
+
+                                    byte[] writeDataB1 = new byte[16];
+                                    byte[] writeDataB2 = new byte[16];
+
+                                    System.arraycopy(datosB1, 0, writeDataB1, 0, datosB1.length);//Copia manual del arreglo datosB1 a writeDataB1
+                                    System.arraycopy(datosB2, 0, writeDataB2, 0, datosB2.length);//Copia manual del arreglo datosB2 a writeDataB2
+
+                                    writeDataB1[11] = (byte) ((byte) fechaLiquidacion.getYear() - 2000);
+                                    writeDataB1[12] = (byte) ((byte) fechaLiquidacion.getMonth().ordinal() + 1);
+                                    writeDataB1[13] = (byte) fechaLiquidacion.getDayOfMonth();
+                                    writeDataB1[14] = (byte) fechaLiquidacion.getHour();
+                                    writeDataB1[15] = (byte) fechaLiquidacion.getMinute();
+
+                                    writeDataB2[11] = (byte) ((byte) fechaMaxSalida.getYear() - 2000);
+                                    writeDataB2[12] = (byte) ((byte) fechaMaxSalida.getMonth().ordinal() + 1);
+                                    writeDataB2[13] = (byte) fechaMaxSalida.getDayOfMonth();
+                                    writeDataB2[14] = (byte) fechaMaxSalida.getHour();
+                                    writeDataB2[15] = (byte) fechaMaxSalida.getMinute();
+
+                                    if (datosB2[11] == 0) {
+                                        boolean row1 = mifare.writeMifareTag(1, 1, writeDataB1);
+                                        boolean row2 = mifare.writeMifareTag(1, 2, writeDataB2);
+
+                                        if (row1 && row2) {
+                                            liquidacionCaja(ldtEntrada, index);
+                                            enableBox();
+                                            final Toast toasty = Toasty.success(MainActivity.this, "" + "Liquidación Exitosa", Toast.LENGTH_LONG);
+                                            toasty.show();
+
+                                            Handler handler = new Handler();
+                                            handler.postDelayed(new Runnable() {
+                                                @Override
+                                                public void run() {
+                                                    toasty.cancel();
+                                                }
+                                            }, 800);
+                                        } else
+                                            Toasty.error(MainActivity.this, "Grabación Incorrecta", Toast.LENGTH_SHORT).show();
+                                    } else {
+                                        fechaMaxSalidaTarjeta = LocalDateTime.of(datosB2[11] + 2000, datosB2[12], datosB2[13], datosB2[14], datosB2[15]);
+
+                                        if (fechaMaxSalidaTarjeta.isBefore(fechaLiquidacion)) {
+                                            boolean row1 = mifare.writeMifareTag(1, 1, writeDataB1);
+                                            boolean row2 = mifare.writeMifareTag(1, 2, writeDataB2);
+
+                                            if (row1 && row2) {
+                                                liquidacionCaja(fechaMaxSalidaTarjeta, index);
+                                                enableBox();
+                                                final Toast toasty = Toasty.success(MainActivity.this, "" + "Liquidación Exitosa", Toast.LENGTH_LONG);
+                                                toasty.show();
+
+                                                Handler handler = new Handler();
+                                                handler.postDelayed(new Runnable() {
+                                                    @Override
+                                                    public void run() {
+                                                        toasty.cancel();
+                                                    }
+                                                }, 800);
+                                            } else
+                                                Toasty.error(MainActivity.this, "Grabación Incorrecta", Toast.LENGTH_SHORT).show();
+                                        } else {
+                                            final int minutosRestantes = (int) Duration.between(fechaLiquidacion, fechaMaxSalidaTarjeta).toMinutes();
+                                            runOnUiThread(new Runnable() {
+                                                @Override
+                                                public void run() {
+                                                    alerta.alertaTiempoSalida(minutosRestantes).show();
+                                                }
+                                            });
+                                        }
+                                    }
                                 }
                             } else {
                                 Toasty.error(getBaseContext(), "" + "Tarjeta no pertenece al" +
@@ -222,9 +301,8 @@ public class MainActivity extends AppCompatActivity {
                             Toasty.error(getBaseContext(), "" + "La lectura ha fallado" +
                                     " por favor vuelva a intentarlo.", Toast.LENGTH_LONG).show();
                         }
-
                     } else
-                        Toast.makeText(getBaseContext(), "Fallo de autentificación", Toast.LENGTH_LONG).show();
+                        Toasty.error(getBaseContext(), "Fallo de autenticación", Toast.LENGTH_LONG).show();
                     break;
             }
         } else {
@@ -279,18 +357,14 @@ public class MainActivity extends AppCompatActivity {
         int seg = segmentos.numSegmentos();
 
         if (seg == 1) {
-            CalculoSencillo sencillo = new CalculoSencillo(ldtEntrada, ldtLiquidacion, tfaCodigo);
-            resultadoCaja = sencillo.resultado();
+            CalculoSencillo sencillo = new CalculoSencillo(ldtEntrada, ldtLiquidacion, tfaCodigo, tdgLiquidacion);
+            try {
+                resultadoCaja = sencillo.resultado();
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
         } else {
             int difDias = (int) Duration.between(ldtEntrada.withHour(0).withMinute(0), ldtLiquidacion.withHour(0).withMinute(0)).toDays();
-
-
-            LocalDateTime quemado1 = LocalDateTime.of(2019, 3, 4, 16, 10); //Fecha actual
-            LocalDateTime quemado2 = LocalDateTime.of(2019, 3, 5, 8, 10); //Fecha actual
-
-            int difQuemados = (int) Duration.between(quemado1.withHour(0).withMinute(0), quemado2.withHour(0).withMinute(0)).toDays();
-
-            Log.d("difQuemados", String.valueOf(difQuemados) + "---" + difDias);
 
             if (difDias < 0) {
                 alerta.alertaFechas().show();
@@ -339,7 +413,6 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-
     @Override
     public void onBackPressed() {
     }
@@ -351,7 +424,6 @@ public class MainActivity extends AppCompatActivity {
         return true;
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar item clicks here. The action bar will
@@ -368,18 +440,7 @@ public class MainActivity extends AppCompatActivity {
             cierreCaja();
         } else if (id == R.id.action_close) {
             finish();
-        } else {
-            if (ldtEntrada != null && print) {
-                int difMinutos = (int) Duration.between(ldtEntrada, ldtLiquidacion).toMinutes();
-                Imprimir imprimir = new Imprimir(context, vehId, fechaEntrada, tfaCodigo, tfaNombre, facturaNumero, fechaHActual, fechaActual, usuario,
-                        estacion, fechaInicioSesion, prefijo, resultadoAjuste, vsubtotal, vimpuestos, difMinutos, numEntregado, numCambio);
-                imprimir.imprimirFactura();
-                print = false;
-            } else if (!print) {
-                Toasty.info(getBaseContext(), "Para poder imprimir finalice caja", Toast.LENGTH_LONG).show();
-            }
         }
-
         return super.onOptionsItemSelected(item);
     }
 
@@ -391,7 +452,7 @@ public class MainActivity extends AppCompatActivity {
         LayoutInflater inflater = this.getLayoutInflater();
         View dialogView = inflater.inflate(R.layout.dialog_box, null);
 
-        final EditText money = dialogView.findViewById(R.id.editText);
+        money = dialogView.findViewById(R.id.editText);
         recibido = dialogView.findViewById(R.id.entregado_id);
         valorPagar = dialogView.findViewById(R.id.valorPagar_id);
         cambio = dialogView.findViewById(R.id.cambio_id);
@@ -402,7 +463,7 @@ public class MainActivity extends AppCompatActivity {
         money.addTextChangedListener(listenerMoney);
 
         ok.setOnClickListener(new View.OnClickListener() {
-            @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+            @RequiresApi(api = Build.VERSION_CODES.O)
             @Override
             public void onClick(View view) {
                 final GuardarDatos guardarDb = new GuardarDatos(vehId, fechaEntrada, tfaCodigo, tfaNombre, facturaNumero, fechaHActual, fechaActual, usuario,
@@ -426,8 +487,11 @@ public class MainActivity extends AppCompatActivity {
                 disableBox();
                 configuracion.save(++acumulador, "next", context);
                 dialogBuilder.dismiss();
-                print = true;
-//                Toast.makeText(getBaseContext(), "" + "Liquidación Exitosa", Toast.LENGTH_LONG).show();
+
+                int difMinutos = (int) Duration.between(ldtEntrada, ldtLiquidacion).toMinutes();
+                Imprimir imprimir = new Imprimir(context, vehId, fechaEntrada, tfaCodigo, tfaNombre, facturaNumero, fechaHActual, fechaActual, usuario,
+                        estacion, fechaInicioSesion, prefijo, resultadoAjuste, vsubtotal, vimpuestos, difMinutos, numEntregado, numCambio);
+//                imprimir.imprimirFactura();
             }
         });
 
@@ -448,7 +512,7 @@ public class MainActivity extends AppCompatActivity {
 
         moneyClose.addTextChangedListener(listenerMoney);
 
-        dineroCaja = configuracion.getValueInt("dinero_caja"+usuario, context);
+        dineroCaja = configuracion.getValueInt("dinero_caja" + usuario, context);
 
         ok.setOnClickListener(new View.OnClickListener() {
             @SuppressLint("DefaultLocale")
@@ -525,40 +589,26 @@ public class MainActivity extends AppCompatActivity {
                 dinero = Integer.parseInt(s.toString());
                 String sDinero = String.format("%,d", dinero);
 
-                if (moneyClose != null) {
+                if (moneyClose != null)
                     if (moneyClose.getText().hashCode() == s.hashCode()) {
                         StringBuilder sbEntregado = new StringBuilder("$");
                         sbEntregado.append(sDinero);
                         dineroCierre.setText(sbEntregado);
                         dineroCierreCaja = dinero;
-                    } else {
-                        resultadoCambio = dinero - resultadoAjuste;
-
-                        String sResultadoCambio = String.format("%,d", resultadoCambio);
-
-                        StringBuilder sbEntregado = new StringBuilder("$");
-                        StringBuilder sbCambio = new StringBuilder("$");
-
-                        sbEntregado.append(sDinero);
-                        sbCambio.append(sResultadoCambio);
-
-                        recibido.setText(sbEntregado);
-                        valorPagar.setText(resultadoFinal);
-                        cambio.setText(sbCambio);
-
-                        numEntregado = dinero;
-                        numCambio = resultadoCambio;
                     }
-                }
 
-                if (moneyOpen != null) {
+
+                if (moneyOpen != null)
                     if (moneyOpen.getText().hashCode() == s.hashCode()) {
                         StringBuilder sbEntregado = new StringBuilder("$");
                         sbEntregado.append(sDinero);
                         dineroApertura.setText(sbEntregado);
                         dineroCaja = dinero;
                         configuracion.save(dineroCaja, "dinero_caja" + usuario, context);
-                    } else {
+                    }
+
+                if (money != null)
+                    if (money.getText().hashCode() == s.hashCode()) {
                         resultadoCambio = dinero - resultadoAjuste;
 
                         String sResultadoCambio = String.format("%,d", resultadoCambio);
@@ -576,7 +626,6 @@ public class MainActivity extends AppCompatActivity {
                         numEntregado = dinero;
                         numCambio = resultadoCambio;
                     }
-                }
             }
         }
 

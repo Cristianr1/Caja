@@ -51,4 +51,19 @@ public class Alertas extends AppCompatActivity {
         return builder.create();
     }
 
+    public AlertDialog alertaTiempoSalida(int minutosRestantes) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+
+        builder.setTitle("Tiempo para salir")
+                .setMessage("Quedan "+minutosRestantes+" minutos para salir del parqueadero")
+                .setPositiveButton("OK",
+                        new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                            }
+                        });
+
+        return builder.create();
+    }
+
 }

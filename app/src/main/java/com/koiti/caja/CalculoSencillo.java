@@ -26,20 +26,19 @@ public class CalculoSencillo {
     @SuppressLint("SimpleDateFormat")
     private SimpleDateFormat formato = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     private LocalDateTime ldtEntrada, ldtLiquidacion;
-    private String tfaCodigo;
+    private String tfaCodigo, tdgLiquidacion;
 
-    public CalculoSencillo(LocalDateTime ldtEntrada, LocalDateTime ldtLiquidacion, String tfaCodigo) {
+    public CalculoSencillo(LocalDateTime ldtEntrada, LocalDateTime ldtLiquidacion, String tfaCodigo, String tdgLiquidacion) {
         this.ldtEntrada = ldtEntrada;
         this.ldtLiquidacion = ldtLiquidacion;
         this.tfaCodigo = tfaCodigo;
+        this.tdgLiquidacion = tdgLiquidacion;
     }
 
     @RequiresApi(api = Build.VERSION_CODES.O)
-    public int resultado() {
-        int difMinutos = (int) Duration.between(ldtEntrada, ldtLiquidacion).toMinutes();
+    public int resultado() throws ParseException {
         String bloquesRepetir, bloquesValor, bloquesCodigo, bloquesTiempo, bloqueSiguiente;
         int resultado = 0;
-        int acumulador = 0;
         int[] datos;
         Map<Integer, int[]> mapBloques = new TreeMap<>();
 
@@ -59,43 +58,45 @@ public class CalculoSencillo {
             bloquesTiempo = c.getString(c.getColumnIndex("tss_tiempo"));
             bloqueSiguiente = c.getString(c.getColumnIndex("tss_siguiente"));
 
-            try {
-                Date tiempo = formato.parse(bloquesTiempo);
-                mapBloques.put(Integer.parseInt(bloquesCodigo),
-                        new int[]{Integer.parseInt(bloquesRepetir),
-                                (int) Double.parseDouble(bloquesValor),
-                                Integer.parseInt(bloqueSiguiente),
-                                tiempo.getHours() * 60 + tiempo.getMinutes()});
-            } catch (ParseException e) {
-                e.printStackTrace();
-            }
+            Date tiempo = formato.parse(bloquesTiempo);
+            mapBloques.put(Integer.parseInt(bloquesCodigo),
+                    new int[]{Integer.parseInt(bloquesRepetir),
+                            (int) Double.parseDouble(bloquesValor),
+                            Integer.parseInt(bloqueSiguiente),
+                            tiempo.getHours() * 60 + tiempo.getMinutes()});
+
 
         }
         c.close();
 
         int key = 1, minutosTotales, cociente;
 
-        while (difMinutos > 0) {
-            datos = mapBloques.get(key);
-            if (datos != null) {
-                cociente = difMinutos / datos[3]; //cociente entre la diferencia de minutos (entrada y liquidación) y el tiempo de subsegmentos
+        Date tdgLiq = formato.parse(tdgLiquidacion);
+        ldtEntrada = ldtEntrada.plusMinutes(tdgLiq.getMinutes());
 
-                if (cociente == 0) {
-                    resultado += datos[1];
-                    difMinutos = 0;
-                } else {
-                    minutosTotales = datos[0] - cociente; //minutosTotales es el número de agrupaciones que resultan de restar el numero de repeticiones con el cociente
-                    if (minutosTotales < 0) {
-                        resultado += datos[0] * datos[1];
-                        difMinutos = difMinutos - datos[0]*datos[3];
+        int difMinutos = (int) Duration.between(ldtEntrada, ldtLiquidacion).toMinutes();
+
+            while (difMinutos > 0) {
+                datos = mapBloques.get(key);
+                if (datos != null) {
+                    cociente = difMinutos / datos[3]; //cociente entre la diferencia de minutos (entrada y liquidación) y el tiempo de subsegmentos
+
+                    if (cociente == 0) {
+                        resultado += datos[1];
+                        difMinutos = 0;
                     } else {
-                        resultado += cociente * datos[1];
-                        difMinutos = difMinutos - datos[3];
+                        minutosTotales = datos[0] - cociente; //minutosTotales es el número de agrupaciones que resultan de restar el numero de repeticiones con el cociente
+                        if (minutosTotales < 0) {
+                            resultado += datos[0] * datos[1];
+                            difMinutos = difMinutos - datos[0] * datos[3];
+                        } else {
+                            resultado += cociente * datos[1];
+                            difMinutos = difMinutos - datos[3];
+                        }
                     }
+                    key = datos[2];
                 }
-                key = datos[2];
             }
-        }
 
         return resultado;
     }

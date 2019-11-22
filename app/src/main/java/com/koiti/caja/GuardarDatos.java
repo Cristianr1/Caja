@@ -8,13 +8,14 @@ import android.util.Log;
 
 import org.jumpmind.symmetric.android.SQLiteOpenHelperRegistry;
 
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 
 
 public class GuardarDatos {
     private String vehId, fechaEntrada, tfaCodigo, tfaNombre, facturaFHEmision, facturaEmision, facturaNumero, usuario,
-            fechaInicioSesion, estacion, prefijo, type;
-    private float total, subtotal, impuesto;
+            fechaInicioSesion, estacion, prefijo, type, subtotal, impuesto;
+    private float total, ajuste;
     private int entregado, cambio;
 
     private SQLiteDatabase db = SQLiteOpenHelperRegistry.lookup(DbCajaProvider.DATABASE_NAME).getWritableDatabase();
@@ -39,11 +40,12 @@ public class GuardarDatos {
         this.fechaInicioSesion = fechaInicioSesion;
         this.prefijo = prefijo;
         this.total = total;
-        this.subtotal = subtotal;
-        this.impuesto = impuesto;
+        this.subtotal = new DecimalFormat("##.##").format(subtotal);
+        this.impuesto = new DecimalFormat("##.##").format(impuesto);
         this.entregado = entregado;
         this.cambio = cambio;
         this.type = type;
+        this.ajuste = 50;
     }
 
     @SuppressLint("DefaultLocale")
@@ -60,6 +62,7 @@ public class GuardarDatos {
         registerInsert.put("fac_subtotal", subtotal);
         registerInsert.put("fac_impuestos", impuesto);
         registerInsert.put("fac_total", total);
+        registerInsert.put("fac_ajuste", ajuste);
         db.insert("tb_facturas", null, registerInsert);
     }
 
@@ -116,13 +119,17 @@ public class GuardarDatos {
     public void tbVehiculos() {
         ContentValues register = new ContentValues();
         register.put("veh_id", vehId);
+        register.put("veh_tipo_id", "Tarjeta");
         register.put("veh_fh_entrada", fechaEntrada);
-        register.put("veh_estacion", "MOVIL");
+        register.put("veh_estacion", estacion);
         register.put("veh_usuario", "SISTEMA");
         register.put("veh_tipo", "Normal");
+        register.put("veh_robado", "N");
+        register.put("veh_purgado", "N");
         register.put("veh_dir_entrada", "1");
         register.put("veh_fe_entrada", fechaEntrada);
         register.put("veh_clase", type);
+        register.put("veh_rotacion", "N");
         db.insert("tb_vehiculos", null, register);
     }
 

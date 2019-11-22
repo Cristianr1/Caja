@@ -2,6 +2,7 @@ package com.koiti.caja;
 
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.util.Log;
 
 import org.jumpmind.symmetric.android.SQLiteOpenHelperRegistry;
 
@@ -11,18 +12,18 @@ public class GetSegmentos {
     private SQLiteDatabase db = SQLiteOpenHelperRegistry.lookup(DbCajaProvider.DATABASE_NAME).getReadableDatabase();
     private String codigo;
 
-    public GetSegmentos(String codigo){
+    public GetSegmentos(String codigo) {
         this.codigo = codigo;
     }
 
 
-    public int numSegmentos(){
+    public int numSegmentos() {
         Cursor cursor = db.query(
                 "tb_tarifa_segmentos",
                 null,
                 "tsg_tfa_codigo" + " LIKE ?",
                 new String[]{codigo},
-                null,
+                "tsg_codigo",
                 null,
                 null);
 
@@ -33,7 +34,7 @@ public class GetSegmentos {
         return rows;
     }
 
-    public int numSubSegmentos(){
+    public int numSubSegmentos() {
         Cursor c = db.query(
                 "tb_tarifa_subsegmentos",
                 null,

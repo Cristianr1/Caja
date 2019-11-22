@@ -2,6 +2,7 @@ package com.koiti.caja;
 
 import android.nfc.Tag;
 import android.nfc.tech.MifareClassic;
+import android.util.Log;
 
 import java.io.IOException;
 
@@ -123,6 +124,7 @@ public class Mifare {
         try {
             mifareClassic.writeBlock(block + (sector * 4), dBuffer);
         }catch(IOException e) {
+            Log.e("mifare", String.valueOf(e));
             e.printStackTrace();
             return false;
         }
