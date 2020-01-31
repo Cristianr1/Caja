@@ -31,6 +31,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import org.jumpmind.symmetric.android.SQLiteOpenHelperRegistry;
+import org.jumpmind.symmetric.android.SymmetricService;
 
 import java.text.DecimalFormat;
 import java.text.ParseException;
@@ -38,35 +39,55 @@ import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 
 import es.dmoral.toasty.Toasty;
 
 public class MainActivity extends AppCompatActivity {
     private Context context;
-    private Button liqTarifa, box;
+    private Button liqTarifa, ok;
     private TextView valor, valorSubtotal, valorImpuestos, datos, cambio, recibido, dineroCierre, dineroApertura, valorPagar;
 
     @SuppressLint("SimpleDateFormat")
     private SimpleDateFormat date = new SimpleDateFormat("yyyy-MM-dd");
     @SuppressLint("SimpleDateFormat")
-    private SimpleDateFormat dateH = new SimpleDateFormat("yyyy-MM-dd  HH:mm");
+    private SimpleDateFormat dateHM = new SimpleDateFormat("yyyy-MM-dd  HH:mm");
     @SuppressLint("SimpleDateFormat")
-    private SimpleDateFormat formato = new SimpleDateFormat("mm");
-    private String fechaHActual, fechaActual, usuario, fechaInicioSesion, estacion, prefijo, fechaEntrada, facturaNumero,
-            vehId, tfaCodigo, tfaNombre, type;
+    private SimpleDateFormat dateHMS = new SimpleDateFormat("yyyy-MM-dd  HH:mm:ss");
+    @SuppressLint("SimpleDateFormat")
+    SimpleDateFormat sdYear = new SimpleDateFormat("yy");
+    String DateYear;
+
+    @SuppressLint("SimpleDateFormat")
+    SimpleDateFormat sdMonth = new SimpleDateFormat("MM");
+    String DateMonth;
+
+    @SuppressLint("SimpleDateFormat")
+    SimpleDateFormat sdDay = new SimpleDateFormat("dd");
+    String DateDay;
+
+    @SuppressLint("SimpleDateFormat")
+    SimpleDateFormat sdHour = new SimpleDateFormat("HH");
+    String DateHour;
+
+    @SuppressLint("SimpleDateFormat")
+    SimpleDateFormat sdMinut = new SimpleDateFormat("mm");
+    String DateMinut;
+    private String fechaHActual, fechaHMActualImprimir, fechaActual, usuario, fechaInicioSesion, estacion, prefijo, fechaEntrada, facturaNumero,
+            vehId, tfaCodigo, tfaNombre, type, encabezado, piepagina, titulo, fixed, sFechaMaxSalida, liqTipo;
     private int acumulador; //Acumulador de la factura
-    private int code, id, dineroCierreCaja = 0, dineroCaja = 0;
+    private int code, id, dineroCierreCaja = 0, dineroCaja = 0, consecutive, consecutive2;
 
     StringBuilder resultadoSubtotal = new StringBuilder("$");
     StringBuilder resultadoImpuesto = new StringBuilder("$");
     StringBuilder resultadoFinal = new StringBuilder("$");
     int resultadoAjuste = 0, numEntregado = 0, numCambio = 0;
     float vsubtotal, vimpuestos;
-    private Boolean active = false, cajaInicial;
+    private Boolean active = false, cajaInicial, registrarInput, row0 = true, dineroNegativo = false;
     private EditText moneyOpen, moneyClose, money;
 
-    private LocalDateTime ldtEntrada, ldtLiquidacion;
+    private LocalDateTime ldtEntrada, ldtLiquidacion, fechaMaxSalida;
 
     private NfcAdapter nfcAdapter;
 
@@ -91,7 +112,7 @@ public class MainActivity extends AppCompatActivity {
         Toasty.Config.getInstance().setTextSize(24).apply();
 
         liqTarifa = findViewById(R.id.liquidacion_Id);
-        box = findViewById(R.id.caja_Id);
+//        box = findViewById(R.id.caja_Id);
         valorSubtotal = findViewById(R.id.subtotal);
         valorImpuestos = findViewById(R.id.impuestos);
         valor = findViewById(R.id.valorLiquidacion);
@@ -100,10 +121,14 @@ public class MainActivity extends AppCompatActivity {
         usuario = configuracion.getValueString("usuario", context);
         estacion = configuracion.getValueString("estacion", context);
         prefijo = configuracion.getValueString("prefijo", context);
+        encabezado = configuracion.getValueString("encabezado", context);
+        piepagina = configuracion.getValueString("piepagina", context);
+        titulo = configuracion.getValueString("titulo", context);
 
         code = configuracion.getValueInt("code", context);
         id = configuracion.getValueInt("id", context);
 
+        registrarInput = configuracion.getValueBoolean("entrada", context);
         cajaInicial = configuracion.getValueBoolean("apertura" + usuario, context);
 
         StringBuilder data = new StringBuilder("Usuario: ");
@@ -115,11 +140,12 @@ public class MainActivity extends AppCompatActivity {
         datos.setText(data);
         // Register the onClick listener with the implementation above
         liqTarifa.setOnClickListener(mListener);
-        box.setOnClickListener(mListener);
+//        box.setOnClickListener(mListener);
 
-        disableBox();
         Sesiones inicioSesionFH = new Sesiones(usuario);
         fechaInicioSesion = inicioSesionFH.fhInicioSesion();
+
+        Log.d("fechaInicioSesion", fechaInicioSesion);
 
         final TextView textViewDate = findViewById(R.id.fechahora_id);
 
@@ -127,9 +153,17 @@ public class MainActivity extends AppCompatActivity {
         someHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
-                fechaHActual = dateH.format(new Date());
+                fechaHActual = dateHMS.format(new Date());
+                fechaHMActualImprimir = dateHM.format(new Date());
                 fechaActual = date.format(new Date());
                 textViewDate.setText(fechaHActual);
+
+                DateYear = sdYear.format(new Date());
+                DateMonth = sdMonth.format(new Date());
+                DateDay = sdDay.format(new Date());
+                DateHour = sdHour.format(new Date());
+                DateMinut = sdMinut.format(new Date());
+
                 someHandler.postDelayed(this, 1000);
             }
         }, 10);
@@ -148,13 +182,28 @@ public class MainActivity extends AppCompatActivity {
                     liqTarifa.setBackground(getDrawable(R.drawable.btn_round_green));//Select Color
                     active = true;
                     break;
-                case R.id.caja_Id:
-                    alertCaja();
-                    break;
+//                case R.id.caja_Id:
+//                    alertCaja();
+//                    break;
             }
         }
     };
 
+
+    @Override
+    protected void onRestart() {
+        super.onRestart();
+        estacion = configuracion.getValueString("estacion", context);
+        registrarInput = configuracion.getValueBoolean("entrada", context);
+
+        StringBuilder data = new StringBuilder("Usuario: ");
+        data.append(usuario);
+        data.append("\t\t\t");
+        data.append("Estación: ");
+        data.append(estacion);
+
+        datos.setText(data);
+    }
 
     @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
@@ -165,6 +214,31 @@ public class MainActivity extends AppCompatActivity {
         }
         Tag nfcTag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
         Mifare mifare = new Mifare(nfcTag);
+
+        consecutive = configuracion.getValueInt("consecutive", context);
+        consecutive2 = configuracion.getValueInt("consecutive", context);
+
+        byte[] writeDataB0 = new byte[16];
+
+        fixed = Integer.toString(consecutive);
+        ArrayList<Integer> dataPark = new ArrayList<>();
+
+        while (consecutive > 0) {
+            dataPark.add(consecutive % 10);
+            consecutive = consecutive / 10;
+        }
+
+        Collections.reverse(dataPark);
+
+        for (int i = 0; i < dataPark.size(); i++) {
+            String sDataPark = Integer.toHexString(dataPark.get(i) + 48);
+            byte BDataPark = Byte.parseByte(sDataPark, 16);
+            writeDataB0[i] = BDataPark;
+        }
+
+        for (int j = dataPark.size(); j < 16; j++) {
+            writeDataB0[j] = (byte) 0;
+        }
 
         final Alertas alerta = new Alertas(context);
         int index;
@@ -184,11 +258,12 @@ public class MainActivity extends AppCompatActivity {
                         byte[] datosB2 = mifare.readMifareTagBlock(1, 2);
 
                         if (datosB0 != null && datosB1 != null && datosB2 != null) {
+
                             if (datosB1[0] == 1 && datosB1[1] == code && datosB1[3] == id) {
                                 String sRead = new String(datosB0);
                                 vehId = sRead.replaceAll("[^\\x20-\\x7e]", "");
 
-                                if (datosB2[0] == 0)
+                                if (datosB2[0] == 0 && !registrarInput)
                                     runOnUiThread(new Runnable() {
                                         @Override
                                         public void run() {
@@ -198,8 +273,21 @@ public class MainActivity extends AppCompatActivity {
                                 else {
                                     DecimalFormat doble0 = new DecimalFormat("00");
 
-                                    fechaEntrada = "20" + doble0.format(datosB2[0]) + "-" + doble0.format(datosB2[1]) + "-" + doble0.format(datosB2[2]) +
-                                            " " + doble0.format(datosB2[3]) + ":" + doble0.format(datosB2[4]);
+
+                                    if (registrarInput && datosB2[0] == 0) {
+                                        liqTipo = "Normal";
+                                        ldtEntrada = LocalDateTime.now();
+//                                        Log.d("registrar", ldtEntrada.getDayOfYear() + "");
+                                        fechaEntrada = doble0.format(ldtEntrada.getYear()) + "-" + doble0.format(ldtEntrada.getMonth().ordinal() + 1) + "-"
+                                                + doble0.format(ldtEntrada.getDayOfYear()) + " "
+                                                + doble0.format(ldtEntrada.getHour()) + ":" + doble0.format(ldtEntrada.getMinute());
+                                    } else if (datosB2[0] != 0) {
+                                        liqTipo = "Reliquiado";
+                                        fechaEntrada = "20" + doble0.format(datosB2[0]) + "-" + doble0.format(datosB2[1]) + "-" + doble0.format(datosB2[2]) +
+                                                " " + doble0.format(datosB2[3]) + ":" + doble0.format(datosB2[4]);
+                                        ldtEntrada = LocalDateTime.of(datosB2[0] + 2000, datosB2[1], datosB2[2], datosB2[3], datosB2[4]);
+                                    }
+
 
                                     if (datosB2[8] == 0) {
                                         index = configuracion.getValueInt("carro_tfa_codigo", context);
@@ -216,16 +304,37 @@ public class MainActivity extends AppCompatActivity {
                                     String tdgSalida = tarifas.tdgSalida(tfacodigo.get(index));
 
                                     int minutosSalida = Integer.parseInt(tdgSalida.substring(tdgSalida.length() - 7, tdgSalida.length() - 5));
+                                    int horasSalida = Integer.parseInt(tdgSalida.substring(tdgSalida.length() - 10, tdgSalida.length() - 8));
 
-                                    ldtEntrada = LocalDateTime.of(datosB2[0] + 2000, datosB2[1], datosB2[2], datosB2[3], datosB2[4]);
+                                    Log.d("minutosSalida", tdgSalida+"---"+horasSalida);
 
-                                    LocalDateTime fechaMaxSalida = fechaLiquidacion.plusMinutes(minutosSalida);//Fecha actual + tiempo maximo de salida
+                                    fechaMaxSalida = fechaLiquidacion.plusMinutes(minutosSalida+horasSalida*60);//Fecha actual + tiempo maximo de salida
 
                                     byte[] writeDataB1 = new byte[16];
                                     byte[] writeDataB2 = new byte[16];
 
                                     System.arraycopy(datosB1, 0, writeDataB1, 0, datosB1.length);//Copia manual del arreglo datosB1 a writeDataB1
                                     System.arraycopy(datosB2, 0, writeDataB2, 0, datosB2.length);//Copia manual del arreglo datosB2 a writeDataB2
+
+                                    if (registrarInput && datosB2[0] == 0) {
+                                        int iyear = Integer.parseInt(DateYear);
+                                        int imonth = Integer.parseInt(DateMonth);
+                                        int iday = Integer.parseInt(DateDay);
+                                        int ihour = Integer.parseInt(DateHour);
+                                        int iminut = Integer.parseInt(DateMinut);
+
+                                        writeDataB2[0] = (byte) iyear;
+                                        writeDataB2[1] = (byte) imonth;
+                                        writeDataB2[2] = (byte) iday;
+                                        writeDataB2[3] = (byte) ihour;
+                                        writeDataB2[4] = (byte) iminut;
+                                        writeDataB2[8] = (byte) 0;
+                                        writeDataB2[10] = (byte) 1;
+
+                                        vehId = Integer.toString(consecutive2);
+
+                                        row0 = mifare.writeMifareTag(1, 0, writeDataB0);
+                                    }
 
                                     writeDataB1[11] = (byte) ((byte) fechaLiquidacion.getYear() - 2000);
                                     writeDataB1[12] = (byte) ((byte) fechaLiquidacion.getMonth().ordinal() + 1);
@@ -239,13 +348,15 @@ public class MainActivity extends AppCompatActivity {
                                     writeDataB2[14] = (byte) fechaMaxSalida.getHour();
                                     writeDataB2[15] = (byte) fechaMaxSalida.getMinute();
 
+                                    sFechaMaxSalida = fechaMaxSalida.getYear() + "-" + (fechaMaxSalida.getMonth().ordinal() + 1) +
+                                            "-" + fechaMaxSalida.getDayOfMonth() + " " + fechaMaxSalida.getHour() + ":" + fechaMaxSalida.getMinute();
+
                                     if (datosB2[11] == 0) {
                                         boolean row1 = mifare.writeMifareTag(1, 1, writeDataB1);
                                         boolean row2 = mifare.writeMifareTag(1, 2, writeDataB2);
 
-                                        if (row1 && row2) {
+                                        if (row0 & row1 && row2) {
                                             liquidacionCaja(ldtEntrada, index);
-                                            enableBox();
                                             final Toast toasty = Toasty.success(MainActivity.this, "" + "Liquidación Exitosa", Toast.LENGTH_LONG);
                                             toasty.show();
 
@@ -256,6 +367,12 @@ public class MainActivity extends AppCompatActivity {
                                                     toasty.cancel();
                                                 }
                                             }, 800);
+
+                                            if (registrarInput && datosB2[0] == 0) {
+                                                int increment = configuracion.getValueInt("consecutive", context);
+                                                configuracion.save(++increment, "consecutive", context);
+                                            }
+
                                         } else
                                             Toasty.error(MainActivity.this, "Grabación Incorrecta", Toast.LENGTH_SHORT).show();
                                     } else {
@@ -265,9 +382,8 @@ public class MainActivity extends AppCompatActivity {
                                             boolean row1 = mifare.writeMifareTag(1, 1, writeDataB1);
                                             boolean row2 = mifare.writeMifareTag(1, 2, writeDataB2);
 
-                                            if (row1 && row2) {
+                                            if (row0 && row1 && row2) {
                                                 liquidacionCaja(fechaMaxSalidaTarjeta, index);
-                                                enableBox();
                                                 final Toast toasty = Toasty.success(MainActivity.this, "" + "Liquidación Exitosa", Toast.LENGTH_LONG);
                                                 toasty.show();
 
@@ -278,6 +394,11 @@ public class MainActivity extends AppCompatActivity {
                                                         toasty.cancel();
                                                     }
                                                 }, 800);
+
+                                                if (registrarInput && datosB2[0] == 0) {
+                                                    int increment = configuracion.getValueInt("consecutive", context);
+                                                    configuracion.save(++increment, "consecutive", context);
+                                                }
                                             } else
                                                 Toasty.error(MainActivity.this, "Grabación Incorrecta", Toast.LENGTH_SHORT).show();
                                         } else {
@@ -301,14 +422,16 @@ public class MainActivity extends AppCompatActivity {
                             Toasty.error(getBaseContext(), "" + "La lectura ha fallado" +
                                     " por favor vuelva a intentarlo.", Toast.LENGTH_LONG).show();
                         }
-                    } else
+                    } else {
                         Toasty.error(getBaseContext(), "Fallo de autenticación", Toast.LENGTH_LONG).show();
+                        liqTarifa.setBackground(getDrawable(R.drawable.btn_round));//Default Color
+                    }
+
                     break;
             }
         } else {
             Toasty.warning(getBaseContext(), "Presione primero el botón liquidación", Toast.LENGTH_LONG).show();
         }
-
     }
 
     @Override
@@ -349,6 +472,9 @@ public class MainActivity extends AppCompatActivity {
 //        LocalDateTime ldtEntrada = LocalDateTime.of(2019, 10, 8, 21, 41); //Fecha de entrada (grabada en la tarjeta)
 //        ldtLiquidacion = LocalDateTime.of(2019, 11, 5, 9, 0); //Fecha actual
         ldtLiquidacion = LocalDateTime.now();//Fecha actual
+
+        if (registrarInput)
+            ldtLiquidacion = ldtLiquidacion.plusMinutes(1);
 
         Calculos liquidacion = new Calculos(ldtEntrada, ldtLiquidacion);
 
@@ -398,7 +524,6 @@ public class MainActivity extends AppCompatActivity {
         resultadoAjuste = (int) Math.round(resultadoCaja / (ajuste * 1.0)) * ajuste;
         if (resultadoAjuste < resultadoCaja) resultadoAjuste = resultadoAjuste + ajuste;
 
-        Log.d("resultadoCaja", resultadoAjuste + "");
 
         vsubtotal = (float) (resultadoAjuste / (1.19));
         vimpuestos = resultadoAjuste - vsubtotal;
@@ -411,10 +536,19 @@ public class MainActivity extends AppCompatActivity {
         valorImpuestos.setText(resultadoImpuesto);
         valor.setText(resultadoFinal);
 
+        alertCaja();
     }
 
     @Override
     public void onBackPressed() {
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        Toast.makeText(context, "Symmetric se ha detenido", Toast.LENGTH_SHORT).show();
+        Intent intent = new Intent(MainActivity.this, SymmetricService.class);
+        stopService(intent);
     }
 
     @Override
@@ -456,18 +590,21 @@ public class MainActivity extends AppCompatActivity {
         recibido = dialogView.findViewById(R.id.entregado_id);
         valorPagar = dialogView.findViewById(R.id.valorPagar_id);
         cambio = dialogView.findViewById(R.id.cambio_id);
-        Button ok = dialogView.findViewById(R.id.button);
+        ok = dialogView.findViewById(R.id.button);
 
         valorPagar.setText(resultadoFinal);
 
         money.addTextChangedListener(listenerMoney);
+
+        ok.setEnabled(false);
 
         ok.setOnClickListener(new View.OnClickListener() {
             @RequiresApi(api = Build.VERSION_CODES.O)
             @Override
             public void onClick(View view) {
                 final GuardarDatos guardarDb = new GuardarDatos(vehId, fechaEntrada, tfaCodigo, tfaNombre, facturaNumero, fechaHActual, fechaActual, usuario,
-                        estacion, fechaInicioSesion, prefijo, resultadoAjuste, vsubtotal, vimpuestos, numEntregado, numCambio, type);
+                        estacion, fechaInicioSesion, prefijo, resultadoAjuste, vsubtotal, vimpuestos, numEntregado, numCambio, type, encabezado,
+                        piepagina, liqTipo);
 
                 valorSubtotal.setText("$0");
                 valorImpuestos.setText("$0");
@@ -484,18 +621,25 @@ public class MainActivity extends AppCompatActivity {
                 resultadoImpuesto.delete(1, resultadoImpuesto.length());
                 resultadoFinal.delete(1, resultadoFinal.length());
 
-                disableBox();
                 configuracion.save(++acumulador, "next", context);
                 dialogBuilder.dismiss();
 
                 int difMinutos = (int) Duration.between(ldtEntrada, ldtLiquidacion).toMinutes();
-                Imprimir imprimir = new Imprimir(context, vehId, fechaEntrada, tfaCodigo, tfaNombre, facturaNumero, fechaHActual, fechaActual, usuario,
-                        estacion, fechaInicioSesion, prefijo, resultadoAjuste, vsubtotal, vimpuestos, difMinutos, numEntregado, numCambio);
-//                imprimir.imprimirFactura();
+
+                if (registrarInput)
+                    difMinutos = (int) Duration.between(ldtEntrada, fechaMaxSalida).toMinutes();
+
+                Imprimir imprimir = new Imprimir(context, vehId, fechaEntrada, tfaCodigo, tfaNombre, facturaNumero, fechaHMActualImprimir, fechaActual, usuario,
+                        estacion, fechaInicioSesion, prefijo, resultadoAjuste, vsubtotal, vimpuestos, difMinutos, numEntregado, numCambio, encabezado,
+                        piepagina, titulo, sFechaMaxSalida);
+                imprimir.imprimirFactura();
+
             }
         });
 
         dialogBuilder.setView(dialogView);
+        dialogBuilder.setCancelable(false);
+        dialogBuilder.setCanceledOnTouchOutside(false);
         dialogBuilder.show();
     }
 
@@ -611,6 +755,15 @@ public class MainActivity extends AppCompatActivity {
                     if (money.getText().hashCode() == s.hashCode()) {
                         resultadoCambio = dinero - resultadoAjuste;
 
+                        String moneyAux;
+                        moneyAux = money.getText().toString();
+
+                        if (!moneyAux.matches("") && resultadoCambio >= 0)
+                            ok.setEnabled(true);
+                        else {
+                            ok.setEnabled(false);
+                        }
+
                         String sResultadoCambio = String.format("%,d", resultadoCambio);
 
                         StringBuilder sbEntregado = new StringBuilder("$");
@@ -634,23 +787,21 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
-    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
-    public void enableBox() {
-        box.setOnClickListener(mListener);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-            box.setBackground(getDrawable(R.drawable.btn_round));//Default Color
-        }
-        box.setEnabled(true);
-//        box.setTextColor(Color.parseColor("#ffffff"));
-    }
-
-    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
-    public void disableBox() {
-        box.setOnClickListener(null);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-            box.setBackground(getDrawable(R.drawable.btn_round_grey));//Default Color
-        }
-        box.setEnabled(false);
-//        box.setTextColor(Color.parseColor("#7D7D72"));
-    }
+//    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+//    public void enableBox() {
+//        box.setOnClickListener(mListener);
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+//            box.setBackground(getDrawable(R.drawable.btn_round));//Default Color
+//        }
+//        box.setEnabled(true);
+//    }
+//
+//    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+//    public void disableBox() {
+//        box.setOnClickListener(null);
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+//            box.setBackground(getDrawable(R.drawable.btn_round_grey));//Default Color
+//        }
+//        box.setEnabled(false);
+//    }
 }

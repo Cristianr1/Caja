@@ -2,12 +2,12 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     tools:context="com.koiti.caja.MainActivity">
-    <item
-        android:id="@+id/printer"
-        android:orderInCategory="100"
-        android:title="Impresora"
-        android:icon="@drawable/ic_print"
-        app:showAsAction="always" />
+<!--    <item-->
+<!--        android:id="@+id/printer"-->
+<!--        android:orderInCategory="100"-->
+<!--        android:title="Impresora"-->
+<!--        android:icon="@drawable/ic_print"-->
+<!--        app:showAsAction="always" />-->
     <item
         android:id="@+id/action_settings"
         android:orderInCategory="100"

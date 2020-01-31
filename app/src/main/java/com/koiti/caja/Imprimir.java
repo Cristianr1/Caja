@@ -29,17 +29,17 @@ public class Imprimir {
     private Printer mPrinter;
 
     private String vehId, fechaEntrada, tfaCodigo, tfaNombre, facturaFHEmision, facturaEmision, facturaNumero, usuario,
-            fechaInicioSesion, estacion, prefijo;
+            fechaInicioSesion, estacion, prefijo, encabezado, piepagina, titulo, fechaMaxSalida;
     private int horas = 0, minutos;
-    private String total, subtotal, impuesto,recibido, cambio;
+    private String total, subtotal, impuesto, recibido, cambio;
 
     private boolean bloop = false;
     private boolean bthreadrunning = false;
 
     @SuppressLint("DefaultLocale")
-    public Imprimir(Context context, String vehId, String fechaEntrada, String tfaCodigo, String tfaNombre, String facturaNumero, String facturaFHEmision, String facturaEmision,
-                    String usuario, String estacion, String fechaInicioSesion, String prefijo, float total, float subtotal, float impuesto,
-                    int minutos, int recibido, int cambio) {
+    public Imprimir(Context context, String vehId, String fechaEntrada, String tfaCodigo, String tfaNombre, String facturaNumero, String facturaFHEmision,
+                    String facturaEmision, String usuario, String estacion, String fechaInicioSesion, String prefijo, float total, float subtotal, float impuesto,
+                    int minutos, int recibido, int cambio, String encabezado, String piepagina, String titulo, String fechaMaxSalida) {
         this.context = context;
         this.vehId = vehId;
         this.fechaEntrada = fechaEntrada;
@@ -58,6 +58,10 @@ public class Imprimir {
         this.minutos = minutos;
         this.recibido = String.format("%,.2f", (float) recibido);
         this.cambio = String.format("%,.2f", (float) cambio);
+        this.encabezado = encabezado;
+        this.piepagina = piepagina;
+        this.titulo = titulo;
+        this.fechaMaxSalida = fechaMaxSalida;
     }
 
 
@@ -83,57 +87,57 @@ public class Imprimir {
         }.start();
     }
 
-    private void testPrintString(int result) {
+    private void testPrintString() {
 
         try {
             //default content print
-            mPrinter.printString("------------------------------------------", 30, Align.CENTER, true, false);
-            mPrinter.print2StringInLine("Factura de Venta", facturaNumero, (float) 1.5, Printer.Font.SERIF, 22,
+            mPrinter.printString(encabezado, 20, Align.LEFT, true, false);
+//            mPrinter.printString("------------------------------------------", 30, Align.CENTER, true, false);
+            mPrinter.print2StringInLine(titulo, prefijo + " " + facturaNumero, (float) 1.5, Printer.Font.SERIF, 20,
                     Align.CENTER, true, false, false);
-            mPrinter.print2StringInLine("Fecha", facturaEmision, (float) 1.5, Printer.Font.SERIF, 22,
+            mPrinter.print2StringInLine("Fecha", facturaEmision, (float) 1.5, Printer.Font.SERIF, 20,
                     Align.CENTER, true, false, false);
-            mPrinter.printString("------------------------------------------", 30, Align.CENTER, true, false);
-            mPrinter.printString("Concepto: PARQUEO -Reliquidado", 22, Align.LEFT, true, false);
-            mPrinter.print2StringInLine("Placa/Código:", vehId, (float) 1.5, Printer.Font.SERIF, 22,
+//            mPrinter.printString("------------------------------------------", 30, Align.CENTER, true, false);
+            mPrinter.printString("Concepto: PARQUEO", 20, Align.LEFT, true, false);
+            mPrinter.print2StringInLine("Placa/Código:", vehId, (float) 1.5, Printer.Font.SERIF, 20,
                     Align.CENTER, true, false, false);
-            mPrinter.print2StringInLine("Entrada:", fechaEntrada, (float) 1.5, Printer.Font.SERIF, 22,
+            mPrinter.print2StringInLine("Entrada:", fechaEntrada, (float) 1.5, Printer.Font.SERIF, 20,
                     Align.CENTER, true, false, false);
-            mPrinter.print2StringInLine("Salida:", facturaFHEmision, (float) 1.5, Printer.Font.SERIF, 22,
+            mPrinter.print2StringInLine("Salida:", fechaMaxSalida, (float) 1.5, Printer.Font.SERIF, 20,
                     Align.CENTER, true, false, false);
-            mPrinter.print2StringInLine("Tiempo:", horas + ":" + minutos, (float) 1.5, Printer.Font.SERIF, 22,
+            mPrinter.print2StringInLine("Tiempo:", horas + ":" + minutos, (float) 1.5, Printer.Font.SERIF, 20,
                     Align.CENTER, true, false, false);
-            mPrinter.print2StringInLine("Tarifa:", tfaNombre, (float) 1.5, Printer.Font.SERIF, 22,
+            mPrinter.print2StringInLine("Tarifa:", tfaNombre, (float) 1.5, Printer.Font.SERIF, 20,
                     Align.CENTER, true, false, false);
-            mPrinter.printString("------------------------------------------", 30, Align.CENTER, true, false);
-            mPrinter.print2StringInLine("Cnt Descripción", "Subtotal", (float) 1.5, Printer.Font.SERIF, 22,
+//            mPrinter.printString("----------------------------------------------", 24, Align.CENTER, true, false);
+//            mPrinter.print2StringInLine("Cnt Descripción", "Subtotal", (float) 1.5, Printer.Font.SERIF, 20,
+//                    Align.CENTER, true, false, false);
+            mPrinter.printString("----------------------------------------------", 24, Align.CENTER, true, false);
+            mPrinter.print2StringInLine("1 Parqueadero", "$" + total, (float) 1.5, Printer.Font.SERIF, 20,
                     Align.CENTER, true, false, false);
-            mPrinter.printString("------------------------------------------", 30, Align.CENTER, true, false);
-            mPrinter.print2StringInLine("1 Parqueadero", "$" + total, (float) 1.5, Printer.Font.SERIF, 22,
+//            mPrinter.printString("--------------", 30, Align.RIGHT, true, false);
+            mPrinter.print2StringInLine("Subtotal:", "$" + total, (float) 1.5, Printer.Font.SERIF, 20,
                     Align.CENTER, true, false, false);
-            mPrinter.printString("--------------", 30, Align.RIGHT, true, false);
-            mPrinter.print2StringInLine("Subtotal:", "$" + total, (float) 1.5, Printer.Font.SERIF, 22,
+            mPrinter.print2StringInLine("Ajuste:", "$ 0.0", (float) 1.5, Printer.Font.SERIF, 20,
                     Align.CENTER, true, false, false);
-            mPrinter.print2StringInLine("Ajuste:", "$ 0.0", (float) 1.5, Printer.Font.SERIF, 22,
+            mPrinter.print2StringInLine("TOTAL A PAGAR  ==>", "$" + total, (float) 1.5, Printer.Font.SERIF, 20,
                     Align.CENTER, true, false, false);
-            mPrinter.printString("--------------", 30, Align.RIGHT, true, false);
-            mPrinter.printString("--------------", 30, Align.RIGHT, true, false);
-            mPrinter.print2StringInLine("TOTAL A PAGAR  ==>", "$"+total, (float) 1.5, Printer.Font.SERIF, 22,
+//            mPrinter.printString("----------------------------------------------", 24, Align.CENTER, true, false);
+            mPrinter.printString("Desglose de Servicio", 20, Align.CENTER, true, false);
+//            mPrinter.printString("----------------------------------------------", 24, Align.CENTER, true, false);
+            mPrinter.print2StringInLine("Base Servicio:", "$" + subtotal, (float) 1.5, Printer.Font.SERIF, 20,
                     Align.CENTER, true, false, false);
-            mPrinter.printString("------------------------------------------", 30, Align.CENTER, true, false);
-            mPrinter.printString("DESGLOSE DE SERVICIO", 22, Align.LEFT, true, false);
-            mPrinter.printString("------------------------------------------", 30, Align.CENTER, true, false);
-            mPrinter.print2StringInLine("Base Servicio:", "$"+subtotal, (float) 1.5, Printer.Font.SERIF, 22,
+            mPrinter.print2StringInLine("Impu: 19% IVA", "$" + impuesto, (float) 1.5, Printer.Font.SERIF, 20,
                     Align.CENTER, true, false, false);
-            mPrinter.print2StringInLine("Impu: 19% IVA", "$"+impuesto, (float) 1.5, Printer.Font.SERIF, 22,
+            mPrinter.print2StringInLine("TOTAL A PAGAR  ==>", "$" + total, (float) 1.5, Printer.Font.SERIF, 20,
                     Align.CENTER, true, false, false);
-            mPrinter.print2StringInLine("TOTAL A PAGAR  ==>", "$"+total, (float) 1.5, Printer.Font.SERIF, 22,
+            mPrinter.printString("Forma de Pago: Efectivo", 20, Align.CENTER, true, false);
+            mPrinter.print2StringInLine("Recibido:", "$" + recibido, (float) 1.5, Printer.Font.SERIF, 20,
                     Align.CENTER, true, false, false);
-            mPrinter.printString("------------------------------------------", 30, Align.CENTER, true, false);
-            mPrinter.printString("Forma de Pago: Efectivo", 22, Align.LEFT, true, false);
-            mPrinter.print2StringInLine("Recibido:", "$"+recibido, (float) 1.5, Printer.Font.SERIF, 22,
+            mPrinter.print2StringInLine("Cambio:", "$" + cambio, (float) 1.5, Printer.Font.SERIF, 20,
                     Align.CENTER, true, false, false);
-            mPrinter.print2StringInLine("Cambio:", "$"+cambio, (float) 1.5, Printer.Font.SERIF, 22,
-                    Align.CENTER, true, false, false);
+//            mPrinter.printString("------------------------------------------", 30, Align.CENTER, true, false);
+            mPrinter.printString(piepagina, 20, Align.LEFT, true, false);
         } catch (RemoteException e) {
             e.printStackTrace();
         }
@@ -159,7 +163,7 @@ public class Imprimir {
 
 //                    testPrintImageBase("logo");
                     // Print text
-                    testPrintString(result);
+                    testPrintString();
 
                     //print end reserve height
                     result = mPrinter.printPaper(100);

@@ -42,6 +42,7 @@ public class Login extends AppCompatActivity {
     @SuppressLint("SimpleDateFormat")
     private SimpleDateFormat date = new SimpleDateFormat("yyyy-MM-dd  HH:mm");
     private String startSession, usuario, estacion;
+    private boolean sesion;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -61,7 +62,7 @@ public class Login extends AppCompatActivity {
         login.setOnClickListener(mListener);
         settings.setOnClickListener(mListener);
 
-        boolean sesion = config.getValueBoolean("sesion", context);
+        sesion = config.getValueBoolean("sesion", context);
 
         if (sesion) {
             intent = new Intent(getBaseContext(), MainActivity.class);
@@ -140,6 +141,12 @@ public class Login extends AppCompatActivity {
         super.onRestart();
         user.setText("");
         password.setText("");
+
+        if (sesion) {
+            usuario = configuracion.getValueString("usuario", context);
+            intent = new Intent(getBaseContext(), MainActivity.class);
+            startActivity(intent);
+        }
     }
 
     @Override

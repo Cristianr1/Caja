@@ -14,7 +14,7 @@ import java.text.SimpleDateFormat;
 
 public class GuardarDatos {
     private String vehId, fechaEntrada, tfaCodigo, tfaNombre, facturaFHEmision, facturaEmision, facturaNumero, usuario,
-            fechaInicioSesion, estacion, prefijo, type, subtotal, impuesto;
+            fechaInicioSesion, estacion, prefijo, type, subtotal, impuesto, encabezado, piepagina, liqTipo;
     private float total, ajuste;
     private int entregado, cambio;
 
@@ -27,7 +27,7 @@ public class GuardarDatos {
     //constructor Facturas
     GuardarDatos(String vehId, String fechaEntrada, String tfaCodigo, String tfaNombre, String facturaNumero, String facturaFHEmision, String facturaEmision,
                  String usuario, String estacion, String fechaInicioSesion, String prefijo,
-                 float total, float subtotal, float impuesto, int entregado, int cambio, String type) {
+                 float total, float subtotal, float impuesto, int entregado, int cambio, String type, String encabezado, String piepagina, String liqTipo) {
         this.vehId = vehId;
         this.fechaEntrada = fechaEntrada;
         this.tfaCodigo = tfaCodigo;
@@ -45,7 +45,10 @@ public class GuardarDatos {
         this.entregado = entregado;
         this.cambio = cambio;
         this.type = type;
-        this.ajuste = 50;
+        this.ajuste = 0;
+        this.encabezado = encabezado;
+        this.piepagina = piepagina;
+        this.liqTipo = liqTipo;
     }
 
     @SuppressLint("DefaultLocale")
@@ -109,7 +112,7 @@ public class GuardarDatos {
         registerInsert.put("liq_tfa_codigo", tfaCodigo);
         registerInsert.put("liq_tfa_nombre", tfaNombre);
         registerInsert.put("liq_fac_numero", facturaNumero);
-        registerInsert.put("liq_tipo", "Normal");
+        registerInsert.put("liq_tipo", liqTipo);
         registerInsert.put("liq_fe_liquidacion", facturaEmision);
         registerInsert.put("liq_fac_prefijo", prefijo);
         registerInsert.put("liq_valor_bruto", total);
