@@ -46,8 +46,8 @@ import es.dmoral.toasty.Toasty;
 
 public class MainActivity extends AppCompatActivity {
     private Context context;
-    private Button liqTarifa, ok;
-    private TextView valor, valorSubtotal, valorImpuestos, datos, cambio, recibido, dineroCierre, dineroApertura, valorPagar;
+    private Button liqTarifa;
+    private TextView datos, cambio, recibido, dineroCierre, dineroApertura, valorPagar;
 
     @SuppressLint("SimpleDateFormat")
     private SimpleDateFormat date = new SimpleDateFormat("yyyy-MM-dd");
@@ -113,9 +113,9 @@ public class MainActivity extends AppCompatActivity {
 
         liqTarifa = findViewById(R.id.liquidacion_Id);
 //        box = findViewById(R.id.caja_Id);
-        valorSubtotal = findViewById(R.id.subtotal);
-        valorImpuestos = findViewById(R.id.impuestos);
-        valor = findViewById(R.id.valorLiquidacion);
+//        valorSubtotal = findViewById(R.id.subtotal);
+//        valorImpuestos = findViewById(R.id.impuestos);
+//        valor = findViewById(R.id.valorLiquidacion);
         datos = findViewById(R.id.datos_id);
 
         usuario = configuracion.getValueString("usuario", context);
@@ -273,13 +273,11 @@ public class MainActivity extends AppCompatActivity {
                                 else {
                                     DecimalFormat doble0 = new DecimalFormat("00");
 
-
                                     if (registrarInput && datosB2[0] == 0) {
                                         liqTipo = "Normal";
                                         ldtEntrada = LocalDateTime.now();
-//                                        Log.d("registrar", ldtEntrada.getDayOfYear() + "");
                                         fechaEntrada = doble0.format(ldtEntrada.getYear()) + "-" + doble0.format(ldtEntrada.getMonth().ordinal() + 1) + "-"
-                                                + doble0.format(ldtEntrada.getDayOfYear()) + " "
+                                                + doble0.format(ldtEntrada.getDayOfMonth()) + " "
                                                 + doble0.format(ldtEntrada.getHour()) + ":" + doble0.format(ldtEntrada.getMinute());
                                     } else if (datosB2[0] != 0) {
                                         liqTipo = "Reliquiado";
@@ -287,7 +285,6 @@ public class MainActivity extends AppCompatActivity {
                                                 " " + doble0.format(datosB2[3]) + ":" + doble0.format(datosB2[4]);
                                         ldtEntrada = LocalDateTime.of(datosB2[0] + 2000, datosB2[1], datosB2[2], datosB2[3], datosB2[4]);
                                     }
-
 
                                     if (datosB2[8] == 0) {
                                         index = configuracion.getValueInt("carro_tfa_codigo", context);
@@ -306,9 +303,9 @@ public class MainActivity extends AppCompatActivity {
                                     int minutosSalida = Integer.parseInt(tdgSalida.substring(tdgSalida.length() - 7, tdgSalida.length() - 5));
                                     int horasSalida = Integer.parseInt(tdgSalida.substring(tdgSalida.length() - 10, tdgSalida.length() - 8));
 
-                                    Log.d("minutosSalida", tdgSalida+"---"+horasSalida);
+                                    Log.d("minutosSalida", tdgSalida + "---" + horasSalida);
 
-                                    fechaMaxSalida = fechaLiquidacion.plusMinutes(minutosSalida+horasSalida*60);//Fecha actual + tiempo maximo de salida
+                                    fechaMaxSalida = fechaLiquidacion.plusMinutes(minutosSalida + horasSalida * 60);//Fecha actual + tiempo maximo de salida
 
                                     byte[] writeDataB1 = new byte[16];
                                     byte[] writeDataB2 = new byte[16];
@@ -528,13 +525,16 @@ public class MainActivity extends AppCompatActivity {
         vsubtotal = (float) (resultadoAjuste / (1.19));
         vimpuestos = resultadoAjuste - vsubtotal;
 
+        numEntregado = (int) resultadoAjuste;
+        numCambio = 0;
+
         resultadoSubtotal.append(String.format("%,d", (int) vsubtotal));
         resultadoImpuesto.append(String.format("%,d", (int) vimpuestos));
         resultadoFinal.append(String.format("%,d", resultadoAjuste));
 
-        valorSubtotal.setText(resultadoSubtotal);
-        valorImpuestos.setText(resultadoImpuesto);
-        valor.setText(resultadoFinal);
+//        valorSubtotal.setText(resultadoSubtotal);
+//        valorImpuestos.setText(resultadoImpuesto);
+//        valor.setText(resultadoFinal);
 
         alertCaja();
     }
@@ -578,69 +578,70 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.O)
     public void alertCaja() {
         acumulador = configuracion.getValueInt("next", context);
-        facturaNumero = String.valueOf(acumulador + configuracion.getValueInt("start", context));
+        facturaNumero = String.valueOf(acumulador);
 
-        final AlertDialog dialogBuilder = new AlertDialog.Builder(this).create();
-        LayoutInflater inflater = this.getLayoutInflater();
-        View dialogView = inflater.inflate(R.layout.dialog_box, null);
+//        final AlertDialog dialogBuilder = new AlertDialog.Builder(this).create();
+//        LayoutInflater inflater = this.getLayoutInflater();
+//        View dialogView = inflater.inflate(R.layout.dialog_box, null);
 
-        money = dialogView.findViewById(R.id.editText);
-        recibido = dialogView.findViewById(R.id.entregado_id);
-        valorPagar = dialogView.findViewById(R.id.valorPagar_id);
-        cambio = dialogView.findViewById(R.id.cambio_id);
-        ok = dialogView.findViewById(R.id.button);
+//        money = dialogView.findViewById(R.id.editText);
+//        recibido = dialogView.findViewById(R.id.entregado_id);
+//        valorPagar = dialogView.findViewById(R.id.valorPagar_id);
+//        cambio = dialogView.findViewById(R.id.cambio_id);
+//        ok = dialogView.findViewById(R.id.button);
+//
+//        valorPagar.setText(resultadoFinal);
+//
+//        money.addTextChangedListener(listenerMoney);
+//
+//        ok.setEnabled(false);
 
-        valorPagar.setText(resultadoFinal);
+//        ok.setOnClickListener(new View.OnClickListener() {
+//            @RequiresApi(api = Build.VERSION_CODES.O)
+//            @Override
+//            public void onClick(View view) {
+        final GuardarDatos guardarDb = new GuardarDatos(vehId, fechaEntrada, tfaCodigo, tfaNombre, facturaNumero, fechaHActual, fechaActual, usuario,
+                estacion, fechaInicioSesion, prefijo, resultadoAjuste, vsubtotal, vimpuestos, numEntregado, numCambio, type, encabezado,
+                piepagina, liqTipo);
 
-        money.addTextChangedListener(listenerMoney);
+//                valorSubtotal.setText("$0");
+//                valorImpuestos.setText("$0");
+//                valor.setText("$0");
 
-        ok.setEnabled(false);
+        guardarDb.tbFacturas();
+        guardarDb.tbFacturaDetalle();
+        guardarDb.tbFacturaImpuestos();
+        guardarDb.tbLiquidaciones();
+        guardarDb.tbCaja();
+        guardarDb.tbVehiculos();
 
-        ok.setOnClickListener(new View.OnClickListener() {
-            @RequiresApi(api = Build.VERSION_CODES.O)
-            @Override
-            public void onClick(View view) {
-                final GuardarDatos guardarDb = new GuardarDatos(vehId, fechaEntrada, tfaCodigo, tfaNombre, facturaNumero, fechaHActual, fechaActual, usuario,
-                        estacion, fechaInicioSesion, prefijo, resultadoAjuste, vsubtotal, vimpuestos, numEntregado, numCambio, type, encabezado,
-                        piepagina, liqTipo);
+        resultadoSubtotal.delete(1, resultadoSubtotal.length());
+        resultadoImpuesto.delete(1, resultadoImpuesto.length());
+        resultadoFinal.delete(1, resultadoFinal.length());
 
-                valorSubtotal.setText("$0");
-                valorImpuestos.setText("$0");
-                valor.setText("$0");
+        configuracion.save(++acumulador, "next", context);
+//                dialogBuilder.dismiss();
 
-                guardarDb.tbFacturas();
-                guardarDb.tbFacturaDetalle();
-                guardarDb.tbFacturaImpuestos();
-                guardarDb.tbLiquidaciones();
-                guardarDb.tbCaja();
-                guardarDb.tbVehiculos();
+        int difMinutos = (int) Duration.between(ldtEntrada, ldtLiquidacion).toMinutes();
 
-                resultadoSubtotal.delete(1, resultadoSubtotal.length());
-                resultadoImpuesto.delete(1, resultadoImpuesto.length());
-                resultadoFinal.delete(1, resultadoFinal.length());
+        if (registrarInput)
+            difMinutos = (int) Duration.between(ldtEntrada, fechaMaxSalida).toMinutes();
 
-                configuracion.save(++acumulador, "next", context);
-                dialogBuilder.dismiss();
+        Imprimir imprimir = new Imprimir(context, vehId, fechaEntrada, tfaCodigo, tfaNombre, facturaNumero, fechaHMActualImprimir, fechaActual, usuario,
+                estacion, fechaInicioSesion, prefijo, resultadoAjuste, vsubtotal, vimpuestos, difMinutos, numEntregado, numCambio, encabezado,
+                piepagina, titulo, sFechaMaxSalida);
+        imprimir.imprimirFactura();
 
-                int difMinutos = (int) Duration.between(ldtEntrada, ldtLiquidacion).toMinutes();
+//            }
+//        });
 
-                if (registrarInput)
-                    difMinutos = (int) Duration.between(ldtEntrada, fechaMaxSalida).toMinutes();
-
-                Imprimir imprimir = new Imprimir(context, vehId, fechaEntrada, tfaCodigo, tfaNombre, facturaNumero, fechaHMActualImprimir, fechaActual, usuario,
-                        estacion, fechaInicioSesion, prefijo, resultadoAjuste, vsubtotal, vimpuestos, difMinutos, numEntregado, numCambio, encabezado,
-                        piepagina, titulo, sFechaMaxSalida);
-                imprimir.imprimirFactura();
-
-            }
-        });
-
-        dialogBuilder.setView(dialogView);
-        dialogBuilder.setCancelable(false);
-        dialogBuilder.setCanceledOnTouchOutside(false);
-        dialogBuilder.show();
+//        dialogBuilder.setView(dialogView);
+//        dialogBuilder.setCancelable(false);
+//        dialogBuilder.setCanceledOnTouchOutside(false);
+//        dialogBuilder.show();
     }
 
     public void cierreCaja() {
@@ -751,34 +752,34 @@ public class MainActivity extends AppCompatActivity {
                         configuracion.save(dineroCaja, "dinero_caja" + usuario, context);
                     }
 
-                if (money != null)
-                    if (money.getText().hashCode() == s.hashCode()) {
-                        resultadoCambio = dinero - resultadoAjuste;
-
-                        String moneyAux;
-                        moneyAux = money.getText().toString();
-
-                        if (!moneyAux.matches("") && resultadoCambio >= 0)
-                            ok.setEnabled(true);
-                        else {
-                            ok.setEnabled(false);
-                        }
-
-                        String sResultadoCambio = String.format("%,d", resultadoCambio);
-
-                        StringBuilder sbEntregado = new StringBuilder("$");
-                        StringBuilder sbCambio = new StringBuilder("$");
-
-                        sbEntregado.append(sDinero);
-                        sbCambio.append(sResultadoCambio);
-
-                        recibido.setText(sbEntregado);
-                        valorPagar.setText(resultadoFinal);
-                        cambio.setText(sbCambio);
-
-                        numEntregado = dinero;
-                        numCambio = resultadoCambio;
-                    }
+//                if (money != null)
+//                    if (money.getText().hashCode() == s.hashCode()) {
+//                        resultadoCambio = dinero - resultadoAjuste;
+//
+//                        String moneyAux;
+//                        moneyAux = money.getText().toString();
+//
+//                        if (!moneyAux.matches("") && resultadoCambio >= 0)
+//                            ok.setEnabled(true);
+//                        else {
+//                            ok.setEnabled(false);
+//                        }
+//
+//                        String sResultadoCambio = String.format("%,d", resultadoCambio);
+//
+//                        StringBuilder sbEntregado = new StringBuilder("$");
+//                        StringBuilder sbCambio = new StringBuilder("$");
+//
+//                        sbEntregado.append(sDinero);
+//                        sbCambio.append(sResultadoCambio);
+//
+//                        recibido.setText(sbEntregado);
+//                        valorPagar.setText(resultadoFinal);
+//                        cambio.setText(sbCambio);
+//
+//                        numEntregado = dinero;
+//                        numCambio = resultadoCambio;
+//                    }
             }
         }
 

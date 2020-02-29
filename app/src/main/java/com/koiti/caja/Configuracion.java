@@ -87,7 +87,7 @@ public class Configuracion extends AppCompatActivity implements AdapterView.OnIt
 
         codeInput.addTextChangedListener(numberTextWatcher);
         idInput.addTextChangedListener(numberTextWatcher);
-        startNum.addTextChangedListener(numberTextWatcher);
+        nextFac.addTextChangedListener(numberTextWatcher);
         endNum.addTextChangedListener(numberTextWatcher);
         consecutiveInput.addTextChangedListener(numberTextWatcher);
 
@@ -113,8 +113,9 @@ public class Configuracion extends AppCompatActivity implements AdapterView.OnIt
         int code = config.getValueInt("code", context);
         int id = config.getValueInt("id", context);
         int start = config.getValueInt("start", context);
+        if(start == 0) start = 1;
         int end = config.getValueInt("end", context);
-        int next = config.getValueInt("next", context) + start;
+        int next = config.getValueInt("next", context);
         int consecutive = config.getValueInt("consecutive", context);
         Boolean entrada = config.getValueBoolean("entrada", context);
 
@@ -216,8 +217,8 @@ public class Configuracion extends AppCompatActivity implements AdapterView.OnIt
                 config.save(value, "code", context);
             else if (idInput.getText().hashCode() == s.hashCode())
                 config.save(value, "id", context);
-            else if (startNum.getText().hashCode() == s.hashCode())
-                config.save(value, "start", context);
+            else if (nextFac.getText().hashCode() == s.hashCode())
+                config.save(value, "next", context);
             else if (endNum.getText().hashCode() == s.hashCode())
                 config.save(value, "end", context);
             else if (consecutiveInput.getText().hashCode() == s.hashCode())

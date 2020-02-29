@@ -103,10 +103,10 @@ public class Imprimir {
                     Align.CENTER, true, false, false);
             mPrinter.print2StringInLine("Entrada:", fechaEntrada, (float) 1.5, Printer.Font.SERIF, 20,
                     Align.CENTER, true, false, false);
-            mPrinter.print2StringInLine("Salida:", fechaMaxSalida, (float) 1.5, Printer.Font.SERIF, 20,
-                    Align.CENTER, true, false, false);
-            mPrinter.print2StringInLine("Tiempo:", horas + ":" + minutos, (float) 1.5, Printer.Font.SERIF, 20,
-                    Align.CENTER, true, false, false);
+//            mPrinter.print2StringInLine("Salida:", fechaMaxSalida, (float) 1.5, Printer.Font.SERIF, 20,
+//                    Align.CENTER, true, false, false);
+//            mPrinter.print2StringInLine("Tiempo:", horas + ":" + minutos, (float) 1.5, Printer.Font.SERIF, 20,
+//                    Align.CENTER, true, false, false);
             mPrinter.print2StringInLine("Tarifa:", tfaNombre, (float) 1.5, Printer.Font.SERIF, 20,
                     Align.CENTER, true, false, false);
 //            mPrinter.printString("----------------------------------------------", 24, Align.CENTER, true, false);
