@@ -20,23 +20,25 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
 
-public class CalculoSencillo {
+class CalculoSencillo {
 
     private SQLiteDatabase db = SQLiteOpenHelperRegistry.lookup(DbCajaProvider.DATABASE_NAME).getReadableDatabase();
     @SuppressLint("SimpleDateFormat")
     private SimpleDateFormat formato = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     private LocalDateTime ldtEntrada, ldtLiquidacion;
     private String tfaCodigo, tdgLiquidacion;
+    private int discountTime;
 
-    public CalculoSencillo(LocalDateTime ldtEntrada, LocalDateTime ldtLiquidacion, String tfaCodigo, String tdgLiquidacion) {
+    CalculoSencillo(LocalDateTime ldtEntrada, LocalDateTime ldtLiquidacion, String tfaCodigo, String tdgLiquidacion, int discountTime) {
         this.ldtEntrada = ldtEntrada;
         this.ldtLiquidacion = ldtLiquidacion;
         this.tfaCodigo = tfaCodigo;
         this.tdgLiquidacion = tdgLiquidacion;
+        this.discountTime = discountTime;
     }
 
     @RequiresApi(api = Build.VERSION_CODES.O)
-    public int resultado() throws ParseException {
+    int resultado() throws ParseException {
         String bloquesRepetir, bloquesValor, bloquesCodigo, bloquesTiempo, bloqueSiguiente;
         int resultado = 0;
         int[] datos;
@@ -69,35 +71,67 @@ public class CalculoSencillo {
         }
         c.close();
 
-        int key = 1, minutosTotales, cociente;
+        int key = 1, cociente, cociente2;
 
         Date tdgLiq = formato.parse(tdgLiquidacion);
         ldtEntrada = ldtEntrada.plusMinutes(tdgLiq.getMinutes());
 
-        int difMinutos = (int) Duration.between(ldtEntrada, ldtLiquidacion).toMinutes();
+        int difMinutos = (int) Duration.between(ldtEntrada, ldtLiquidacion).toMinutes() - discountTime;
+        difMinutos = negativeTimeSetting(difMinutos);
+        Log.d("minutos", difMinutos + "");
 
-            while (difMinutos > 0) {
-                datos = mapBloques.get(key);
-                if (datos != null) {
-                    cociente = difMinutos / datos[3]; //cociente entre la diferencia de minutos (entrada y liquidación) y el tiempo de subsegmentos
 
-                    if (cociente == 0) {
-                        resultado += datos[1];
-                        difMinutos = 0;
-                    } else {
-                        minutosTotales = datos[0] - cociente; //minutosTotales es el número de agrupaciones que resultan de restar el numero de repeticiones con el cociente
-                        if (minutosTotales < 0) {
-                            resultado += datos[0] * datos[1];
-                            difMinutos = difMinutos - datos[0] * datos[3];
-                        } else {
-                            resultado += cociente * datos[1];
-                            difMinutos = difMinutos - datos[3];
-                        }
-                    }
-                    key = datos[2];
+        cociente = difMinutos / Objects.requireNonNull(mapBloques.get(1))[3]; //cociente entre la diferencia de minutos (entrada y liquidación) y el tiempo de subsegmentos
+        if (cociente == 0) return 0;
+
+        Log.d("cociente", cociente + "");
+
+        while (cociente > 0) {
+            datos = mapBloques.get(key);
+            if (datos != null) {
+                cociente2 = datos[0] / cociente;
+
+                Log.d("cociente2", cociente2 + "");
+
+                if (cociente2 > 0) {
+                    resultado += cociente * datos[1];
+                    cociente = 0;
+                    Log.d("resultado", resultado + "---" + datos[1]);
+                } else {
+                    cociente = cociente - datos[0]; //minutosTotales es el número de agrupaciones que resultan de restar el numero de repeticiones con el cociente
+                    resultado += datos[0] * datos[1];
+                    Log.d("resultado", resultado + "-x--" + cociente + "--" + datos[0]);
                 }
+                key = datos[2];
             }
+        }
+
+//            while (difMinutos > 0) {
+//                datos = mapBloques.get(key);
+//                if (datos != null) {
+//                    cociente = difMinutos / datos[3]; //cociente entre la diferencia de minutos (entrada y liquidación) y el tiempo de subsegmentos
+//
+//                    if (cociente == 0) {
+//                        resultado += datos[1];
+//                        difMinutos = 0;
+//                    } else {
+//                        minutosTotales = datos[0] - cociente; //minutosTotales es el número de agrupaciones que resultan de restar el numero de repeticiones con el cociente
+//                        if (minutosTotales < 0) {
+//                            resultado += datos[0] * datos[1];
+//                            difMinutos = difMinutos - datos[0] * datos[3];
+//                        } else {
+//                            resultado += cociente * datos[1];
+//                            difMinutos = difMinutos - datos[3];
+//                        }
+//                    }
+//                    key = datos[2];
+//                }
+//            }
 
         return resultado;
+    }
+
+    private int negativeTimeSetting(int number) {
+        return number < 0 ? 0 : number;
     }
 }

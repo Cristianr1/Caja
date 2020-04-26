@@ -46,7 +46,7 @@ import es.dmoral.toasty.Toasty;
 
 public class MainActivity extends AppCompatActivity {
     private Context context;
-    private Button liqTarifa;
+    private Button liqTarifa, ok;
     private TextView datos, cambio, recibido, dineroCierre, dineroApertura, valorPagar;
 
     @SuppressLint("SimpleDateFormat")
@@ -75,24 +75,26 @@ public class MainActivity extends AppCompatActivity {
     SimpleDateFormat sdMinut = new SimpleDateFormat("mm");
     String DateMinut;
     private String fechaHActual, fechaHMActualImprimir, fechaActual, usuario, fechaInicioSesion, estacion, prefijo, fechaEntrada, facturaNumero,
-            vehId, tfaCodigo, tfaNombre, type, encabezado, piepagina, titulo, fixed, sFechaMaxSalida, liqTipo;
+            vehId, tfaCodigo, tfaNombre, type, encabezado, piepagina, titulo, fixed, sFechaMaxSalida, liqTipo, veh_tipo, nameDiscount = "";
     private int acumulador; //Acumulador de la factura
-    private int code, id, dineroCierreCaja = 0, dineroCaja = 0, consecutive, consecutive2;
+    private int code, id, dineroCierreCaja = 0, dineroCaja = 0, consecutive, consecutive2, codeDiscount = 0;
 
     StringBuilder resultadoSubtotal = new StringBuilder("$");
     StringBuilder resultadoImpuesto = new StringBuilder("$");
     StringBuilder resultadoFinal = new StringBuilder("$");
     int resultadoAjuste = 0, numEntregado = 0, numCambio = 0;
     float vsubtotal, vimpuestos;
-    private Boolean active = false, cajaInicial, registrarInput, row0 = true, dineroNegativo = false;
+    private Boolean active = false, cajaInicial, registrarInput, row0 = true, dineroNegativo = false, discount = false;
     private EditText moneyOpen, moneyClose, money;
 
-    private LocalDateTime ldtEntrada, ldtLiquidacion, fechaMaxSalida;
+    private LocalDateTime ldtEntrada, ldtLiquidacion, fechaMaxSalida, ldtMensual;
 
     private NfcAdapter nfcAdapter;
+    private int discountTime = 0, discountPercentage = 0;
 
     Tarifas tarifas = new Tarifas();
     ConfigStorage configuracion = new ConfigStorage();
+    Discounts discounts = new Discounts();
 
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
@@ -171,6 +173,7 @@ public class MainActivity extends AppCompatActivity {
         if (!cajaInicial) {
             aperturaCaja();
         }
+
     }
 
 
@@ -246,6 +249,9 @@ public class MainActivity extends AppCompatActivity {
         final LocalDateTime fechaLiquidacion = LocalDateTime.now();//Fecha actual
         final LocalDateTime fechaMaxSalidaTarjeta;
 
+        DecimalFormat doble0 = new DecimalFormat("00");
+
+
         if (active) {
             resultadoSubtotal.delete(1, resultadoSubtotal.length());
             resultadoImpuesto.delete(1, resultadoImpuesto.length());
@@ -260,8 +266,19 @@ public class MainActivity extends AppCompatActivity {
                         if (datosB0 != null && datosB1 != null && datosB2 != null) {
 
                             if (datosB1[0] == 1 && datosB1[1] == code && datosB1[3] == id) {
+                                veh_tipo = "Normal";
                                 String sRead = new String(datosB0);
                                 vehId = sRead.replaceAll("[^\\x20-\\x7e]", "");
+
+                                if (discounts.getArrayDiscountValue(datosB2[6]) != null) {
+                                    discount = true;
+                                    codeDiscount = datosB2[6];
+                                    nameDiscount = discounts.getArrayDiscountName(datosB2[6]);
+                                    if (discounts.getArrayDiscountValue(datosB2[6])[0] == 0)
+                                        discountTime = discounts.getArrayDiscountValue(datosB2[6])[1];
+                                    else
+                                        discountPercentage = discounts.getArrayDiscountValue(datosB2[6])[1];
+                                }
 
                                 if (datosB2[0] == 0 && !registrarInput)
                                     runOnUiThread(new Runnable() {
@@ -271,8 +288,6 @@ public class MainActivity extends AppCompatActivity {
                                         }
                                     });
                                 else {
-                                    DecimalFormat doble0 = new DecimalFormat("00");
-
                                     if (registrarInput && datosB2[0] == 0) {
                                         liqTipo = "Normal";
                                         ldtEntrada = LocalDateTime.now();
@@ -286,16 +301,43 @@ public class MainActivity extends AppCompatActivity {
                                         ldtEntrada = LocalDateTime.of(datosB2[0] + 2000, datosB2[1], datosB2[2], datosB2[3], datosB2[4]);
                                     }
 
-                                    if (datosB2[8] == 0) {
-                                        index = configuracion.getValueInt("carro_tfa_codigo", context);
-                                        type = "Carro";
-                                    } else if (datosB2[8] == 1) {
-                                        index = configuracion.getValueInt("moto_tfa_codigo", context);
-                                        type = "Moto";
-                                    } else {
-                                        index = configuracion.getValueInt("bici_tfa_codigo", context);
-                                        type = "Bicicleta";
+
+                                    switch (datosB2[8]) {
+                                        case 0:
+                                            index = configuracion.getValueInt("carro_tfa_codigo", context);
+                                            type = "Carro";
+                                            break;
+                                        case 1:
+                                            index = configuracion.getValueInt("moto_tfa_codigo", context);
+                                            type = "Moto";
+                                            break;
+                                        case 2:
+                                            index = configuracion.getValueInt("bici_tfa_codigo", context);
+                                            type = "Bicicleta";
+                                            break;
+                                        case 32:
+                                            index = configuracion.getValueInt("casillero_tfa_codigo", context);
+                                            type = "Casillero";
+                                            break;
+                                        case 33:
+                                            index = configuracion.getValueInt("bicicletero_tfa_codigo", context);
+                                            type = "Bicicletero";
+                                            break;
+                                        default:
+                                            index = 0;
+                                            type = "Carro";
                                     }
+
+//                                    if (datosB2[8] == 0) {
+//                                        index = configuracion.getValueInt("carro_tfa_codigo", context);
+//                                        type = "Carro";
+//                                    } else if (datosB2[8] == 1) {
+//                                        index = configuracion.getValueInt("moto_tfa_codigo", context);
+//                                        type = "Moto";
+//                                    } else {
+//                                        index = configuracion.getValueInt("bici_tfa_codigo", context);
+//                                        type = "Bicicleta";
+//                                    }
 
                                     ArrayList<String> tfacodigo = tarifas.tfaCodigo();
                                     String tdgSalida = tarifas.tdgSalida(tfacodigo.get(index));
@@ -354,16 +396,16 @@ public class MainActivity extends AppCompatActivity {
 
                                         if (row0 & row1 && row2) {
                                             liquidacionCaja(ldtEntrada, index);
-                                            final Toast toasty = Toasty.success(MainActivity.this, "" + "Liquidación Exitosa", Toast.LENGTH_LONG);
-                                            toasty.show();
+//                                            final Toast toasty = Toasty.success(MainActivity.this, "" + "Liquidación Exitosa", Toast.LENGTH_LONG);
+//                                            toasty.show();
 
-                                            Handler handler = new Handler();
-                                            handler.postDelayed(new Runnable() {
-                                                @Override
-                                                public void run() {
-                                                    toasty.cancel();
-                                                }
-                                            }, 800);
+//                                            Handler handler = new Handler();
+//                                            handler.postDelayed(new Runnable() {
+//                                                @Override
+//                                                public void run() {
+//                                                    toasty.cancel();
+//                                                }
+//                                            }, 800);
 
                                             if (registrarInput && datosB2[0] == 0) {
                                                 int increment = configuracion.getValueInt("consecutive", context);
@@ -381,16 +423,16 @@ public class MainActivity extends AppCompatActivity {
 
                                             if (row0 && row1 && row2) {
                                                 liquidacionCaja(fechaMaxSalidaTarjeta, index);
-                                                final Toast toasty = Toasty.success(MainActivity.this, "" + "Liquidación Exitosa", Toast.LENGTH_LONG);
-                                                toasty.show();
-
-                                                Handler handler = new Handler();
-                                                handler.postDelayed(new Runnable() {
-                                                    @Override
-                                                    public void run() {
-                                                        toasty.cancel();
-                                                    }
-                                                }, 800);
+//                                                final Toast toasty = Toasty.success(MainActivity.this, "" + "Liquidación Exitosa", Toast.LENGTH_LONG);
+//                                                toasty.show();
+//
+//                                                Handler handler = new Handler();
+//                                                handler.postDelayed(new Runnable() {
+//                                                    @Override
+//                                                    public void run() {
+//                                                        toasty.cancel();
+//                                                    }
+//                                                }, 800);
 
                                                 if (registrarInput && datosB2[0] == 0) {
                                                     int increment = configuracion.getValueInt("consecutive", context);
@@ -409,6 +451,74 @@ public class MainActivity extends AppCompatActivity {
                                         }
                                     }
                                 }
+                            } else if (datosB1[0] == 2 && datosB1[1] == code && datosB1[3] == id) {
+                                veh_tipo = "Mensual";
+                                ldtEntrada = LocalDateTime.now();
+                                ldtMensual = LocalDateTime.of(datosB2[8] + 2000, datosB2[9],
+                                        datosB2[10], 23, 59);
+                                if (ldtEntrada.isBefore(ldtMensual)) {
+                                    byte[] writeDataB1 = new byte[16];
+                                    byte[] writeDataB2 = new byte[16];
+
+                                    System.arraycopy(datosB1, 0, writeDataB1, 0, datosB1.length);//Copia manual del arreglo datosB1 a writeDataB1
+                                    System.arraycopy(datosB2, 0, writeDataB2, 0, datosB2.length);//Copia manual del arreglo datosB2 a writeDataB2
+
+                                    int iyear = Integer.parseInt(DateYear);
+                                    int imonth = Integer.parseInt(DateMonth);
+                                    int iday = Integer.parseInt(DateDay);
+                                    int ihour = Integer.parseInt(DateHour);
+                                    int iminut = Integer.parseInt(DateMinut);
+
+                                    writeDataB2[0] = (byte) iyear;
+                                    writeDataB2[1] = (byte) imonth;
+                                    writeDataB2[2] = (byte) iday;
+                                    writeDataB2[3] = (byte) ihour;
+                                    writeDataB2[4] = (byte) iminut;
+                                    writeDataB2[8] = (byte) 0;
+                                    writeDataB2[10] = (byte) 1;
+
+                                    vehId = Integer.toString(consecutive2);
+
+                                    row0 = mifare.writeMifareTag(1, 0, writeDataB0);
+
+                                    fechaEntrada = doble0.format(ldtEntrada.getYear()) + "-" + doble0.format(ldtEntrada.getMonth().ordinal() + 1) + "-"
+                                            + doble0.format(ldtEntrada.getDayOfMonth()) + " "
+                                            + doble0.format(ldtEntrada.getHour()) + ":" + doble0.format(ldtEntrada.getMinute());
+
+                                    writeDataB1[11] = (byte) ((byte) fechaLiquidacion.getYear() - 2000);
+                                    writeDataB1[12] = (byte) ((byte) fechaLiquidacion.getMonth().ordinal() + 1);
+                                    writeDataB1[13] = (byte) fechaLiquidacion.getDayOfMonth();
+                                    writeDataB1[14] = (byte) fechaLiquidacion.getHour();
+                                    writeDataB1[15] = (byte) fechaLiquidacion.getMinute();
+
+                                    boolean row1 = mifare.writeMifareTag(1, 1, writeDataB1);
+                                    boolean row2 = mifare.writeMifareTag(1, 2, writeDataB2);
+
+                                    if (row0 & row1 && row2) {
+                                        final Toast toasty = Toasty.success(MainActivity.this, "" + "Liquidación Exitosa", Toast.LENGTH_LONG);
+                                        toasty.show();
+
+                                        Handler handler = new Handler();
+                                        handler.postDelayed(new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                toasty.cancel();
+                                            }
+                                        }, 800);
+
+                                        int increment = configuracion.getValueInt("consecutive", context);
+                                        configuracion.save(++increment, "consecutive", context);
+                                    } else
+                                        Toasty.error(MainActivity.this, "Grabación Incorrecta", Toast.LENGTH_SHORT).show();
+                                } else {
+                                    runOnUiThread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            alerta.alertaMensuales().show();
+                                        }
+                                    });
+                                }
+
                             } else {
                                 Toasty.error(getBaseContext(), "" + "Tarjeta no pertenece al" +
                                         " parqueadero.", Toast.LENGTH_LONG).show();
@@ -479,8 +589,11 @@ public class MainActivity extends AppCompatActivity {
 
         int seg = segmentos.numSegmentos();
 
+        Log.d("segmentos", seg + "__" + ldtEntrada + "__" + ldtLiquidacion);
+
         if (seg == 1) {
-            CalculoSencillo sencillo = new CalculoSencillo(ldtEntrada, ldtLiquidacion, tfaCodigo, tdgLiquidacion);
+            CalculoSencillo sencillo = new CalculoSencillo(ldtEntrada, ldtLiquidacion, tfaCodigo,
+                    tdgLiquidacion, discountTime);
             try {
                 resultadoCaja = sencillo.resultado();
             } catch (ParseException e) {
@@ -493,30 +606,34 @@ public class MainActivity extends AppCompatActivity {
                 alerta.alertaFechas().show();
             } else if (difDias == 0) {
                 try {
-                    resultadoCaja += liquidacion.calculoEntrada(tfaCodigo, tdgLiquidacion, false);
+                    resultadoCaja += liquidacion.calculoEntrada(tfaCodigo, tdgLiquidacion, false, discountTime);
                     Log.d("resultadoCaja", resultadoCaja + "");
                 } catch (ParseException e) {
                     e.printStackTrace();
                 }
             } else if (difDias == 1) {
                 try {
-                    resultadoCaja += liquidacion.calculoEntrada(tfaCodigo, tdgLiquidacion, true);
-                    resultadoCaja += liquidacion.calculoSalida(tfaCodigo, tdgLiquidacion);
+                    resultadoCaja += liquidacion.calculoEntrada(tfaCodigo, tdgLiquidacion, true, 0);
+                    resultadoCaja += liquidacion.calculoSalida(tfaCodigo, tdgLiquidacion, discountTime);
                     Log.d("resultadoCaja", resultadoCaja + "");
                 } catch (ParseException e) {
                     e.printStackTrace();
                 }
             } else {
                 try {
-                    resultadoCaja += liquidacion.calculoEntrada(tfaCodigo, tdgLiquidacion, false);
+                    resultadoCaja += liquidacion.calculoEntrada(tfaCodigo, tdgLiquidacion, false, 0);
                     resultadoCaja += liquidacion.calculoDiaIntermedio(tfaCodigo);
-                    resultadoCaja += liquidacion.calculoSalida(tfaCodigo, tdgLiquidacion);
+                    resultadoCaja += liquidacion.calculoSalida(tfaCodigo, tdgLiquidacion, discountTime);
                     Log.d("resultadoCaja", resultadoCaja + "");
                 } catch (ParseException e) {
                     e.printStackTrace();
                 }
             }
         }
+
+        Log.d("ajuste", ajuste + "");
+
+        resultadoCaja *= (100 - discountPercentage) / 100;
 
         resultadoAjuste = (int) Math.round(resultadoCaja / (ajuste * 1.0)) * ajuste;
         if (resultadoAjuste < resultadoCaja) resultadoAjuste = resultadoAjuste + ajuste;
@@ -525,8 +642,6 @@ public class MainActivity extends AppCompatActivity {
         vsubtotal = (float) (resultadoAjuste / (1.19));
         vimpuestos = resultadoAjuste - vsubtotal;
 
-        numEntregado = (int) resultadoAjuste;
-        numCambio = 0;
 
         resultadoSubtotal.append(String.format("%,d", (int) vsubtotal));
         resultadoImpuesto.append(String.format("%,d", (int) vimpuestos));
@@ -583,65 +698,65 @@ public class MainActivity extends AppCompatActivity {
         acumulador = configuracion.getValueInt("next", context);
         facturaNumero = String.valueOf(acumulador);
 
-//        final AlertDialog dialogBuilder = new AlertDialog.Builder(this).create();
-//        LayoutInflater inflater = this.getLayoutInflater();
-//        View dialogView = inflater.inflate(R.layout.dialog_box, null);
+        final AlertDialog dialogBuilder = new AlertDialog.Builder(this).create();
+        LayoutInflater inflater = this.getLayoutInflater();
+        View dialogView = inflater.inflate(R.layout.dialog_box, null);
 
-//        money = dialogView.findViewById(R.id.editText);
-//        recibido = dialogView.findViewById(R.id.entregado_id);
-//        valorPagar = dialogView.findViewById(R.id.valorPagar_id);
-//        cambio = dialogView.findViewById(R.id.cambio_id);
-//        ok = dialogView.findViewById(R.id.button);
-//
-//        valorPagar.setText(resultadoFinal);
-//
-//        money.addTextChangedListener(listenerMoney);
-//
-//        ok.setEnabled(false);
+        money = dialogView.findViewById(R.id.editText);
+        recibido = dialogView.findViewById(R.id.entregado_id);
+        valorPagar = dialogView.findViewById(R.id.valorPagar_id);
+        cambio = dialogView.findViewById(R.id.cambio_id);
+        ok = dialogView.findViewById(R.id.button);
 
-//        ok.setOnClickListener(new View.OnClickListener() {
-//            @RequiresApi(api = Build.VERSION_CODES.O)
-//            @Override
-//            public void onClick(View view) {
-        final GuardarDatos guardarDb = new GuardarDatos(vehId, fechaEntrada, tfaCodigo, tfaNombre, facturaNumero, fechaHActual, fechaActual, usuario,
-                estacion, fechaInicioSesion, prefijo, resultadoAjuste, vsubtotal, vimpuestos, numEntregado, numCambio, type, encabezado,
-                piepagina, liqTipo);
+        valorPagar.setText(resultadoFinal);
+
+        money.addTextChangedListener(listenerMoney);
+
+        ok.setEnabled(false);
+
+        ok.setOnClickListener(new View.OnClickListener() {
+            @RequiresApi(api = Build.VERSION_CODES.O)
+            @Override
+            public void onClick(View view) {
+                final GuardarDatos guardarDb = new GuardarDatos(vehId, fechaEntrada, tfaCodigo, tfaNombre, facturaNumero, fechaHActual, fechaActual, usuario,
+                        estacion, fechaInicioSesion, prefijo, resultadoAjuste, vsubtotal, vimpuestos, numEntregado, numCambio, type, encabezado,
+                        piepagina, liqTipo, veh_tipo, codeDiscount, nameDiscount);
 
 //                valorSubtotal.setText("$0");
 //                valorImpuestos.setText("$0");
 //                valor.setText("$0");
 
-        guardarDb.tbFacturas();
-        guardarDb.tbFacturaDetalle();
-        guardarDb.tbFacturaImpuestos();
-        guardarDb.tbLiquidaciones();
-        guardarDb.tbCaja();
-        guardarDb.tbVehiculos();
+                guardarDb.tbFacturas();
+                guardarDb.tbFacturaDetalle();
+                guardarDb.tbFacturaImpuestos();
+                guardarDb.tbLiquidaciones();
+                guardarDb.tbCaja();
+                guardarDb.tbVehiculos();
+                if (discount) guardarDb.tbLiqDescuentos();
 
-        resultadoSubtotal.delete(1, resultadoSubtotal.length());
-        resultadoImpuesto.delete(1, resultadoImpuesto.length());
-        resultadoFinal.delete(1, resultadoFinal.length());
+                resultadoSubtotal.delete(1, resultadoSubtotal.length());
+                resultadoImpuesto.delete(1, resultadoImpuesto.length());
+                resultadoFinal.delete(1, resultadoFinal.length());
 
-        configuracion.save(++acumulador, "next", context);
-//                dialogBuilder.dismiss();
+                configuracion.save(++acumulador, "next", context);
 
-        int difMinutos = (int) Duration.between(ldtEntrada, ldtLiquidacion).toMinutes();
+                int difMinutos = (int) Duration.between(ldtEntrada, ldtLiquidacion).toMinutes();
 
-        if (registrarInput)
-            difMinutos = (int) Duration.between(ldtEntrada, fechaMaxSalida).toMinutes();
+                if (registrarInput)
+                    difMinutos = (int) Duration.between(ldtEntrada, fechaMaxSalida).toMinutes();
 
-        Imprimir imprimir = new Imprimir(context, vehId, fechaEntrada, tfaCodigo, tfaNombre, facturaNumero, fechaHMActualImprimir, fechaActual, usuario,
-                estacion, fechaInicioSesion, prefijo, resultadoAjuste, vsubtotal, vimpuestos, difMinutos, numEntregado, numCambio, encabezado,
-                piepagina, titulo, sFechaMaxSalida);
-        imprimir.imprimirFactura();
+                Imprimir imprimir = new Imprimir(context, vehId, fechaEntrada, tfaCodigo, tfaNombre, facturaNumero, fechaHMActualImprimir, fechaActual, usuario,
+                        estacion, fechaInicioSesion, prefijo, resultadoAjuste, vsubtotal, vimpuestos, difMinutos, numEntregado, numCambio, encabezado,
+                        piepagina, titulo, sFechaMaxSalida);
+                imprimir.imprimirFactura();
+                dialogBuilder.dismiss();
+            }
+        });
 
-//            }
-//        });
-
-//        dialogBuilder.setView(dialogView);
-//        dialogBuilder.setCancelable(false);
-//        dialogBuilder.setCanceledOnTouchOutside(false);
-//        dialogBuilder.show();
+        dialogBuilder.setView(dialogView);
+        dialogBuilder.setCancelable(false);
+        dialogBuilder.setCanceledOnTouchOutside(false);
+        dialogBuilder.show();
     }
 
     public void cierreCaja() {
@@ -752,34 +867,34 @@ public class MainActivity extends AppCompatActivity {
                         configuracion.save(dineroCaja, "dinero_caja" + usuario, context);
                     }
 
-//                if (money != null)
-//                    if (money.getText().hashCode() == s.hashCode()) {
-//                        resultadoCambio = dinero - resultadoAjuste;
-//
-//                        String moneyAux;
-//                        moneyAux = money.getText().toString();
-//
-//                        if (!moneyAux.matches("") && resultadoCambio >= 0)
-//                            ok.setEnabled(true);
-//                        else {
-//                            ok.setEnabled(false);
-//                        }
-//
-//                        String sResultadoCambio = String.format("%,d", resultadoCambio);
-//
-//                        StringBuilder sbEntregado = new StringBuilder("$");
-//                        StringBuilder sbCambio = new StringBuilder("$");
-//
-//                        sbEntregado.append(sDinero);
-//                        sbCambio.append(sResultadoCambio);
-//
-//                        recibido.setText(sbEntregado);
-//                        valorPagar.setText(resultadoFinal);
-//                        cambio.setText(sbCambio);
-//
-//                        numEntregado = dinero;
-//                        numCambio = resultadoCambio;
-//                    }
+                if (money != null)
+                    if (money.getText().hashCode() == s.hashCode()) {
+                        resultadoCambio = dinero - resultadoAjuste;
+
+                        String moneyAux;
+                        moneyAux = money.getText().toString();
+
+                        if (!moneyAux.matches("") && resultadoCambio >= 0)
+                            ok.setEnabled(true);
+                        else {
+                            ok.setEnabled(false);
+                        }
+
+                        String sResultadoCambio = String.format("%,d", resultadoCambio);
+
+                        StringBuilder sbEntregado = new StringBuilder("$");
+                        StringBuilder sbCambio = new StringBuilder("$");
+
+                        sbEntregado.append(sDinero);
+                        sbCambio.append(sResultadoCambio);
+
+                        recibido.setText(sbEntregado);
+                        valorPagar.setText(resultadoFinal);
+                        cambio.setText(sbCambio);
+
+                        numEntregado = dinero;
+                        numCambio = resultadoCambio;
+                    }
             }
         }
 

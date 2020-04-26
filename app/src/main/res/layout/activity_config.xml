@@ -10,6 +10,113 @@
         android:orientation="vertical">
 
 
+<!--        <androidx.cardview.widget.CardView-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:layout_gravity="center"-->
+<!--            android:layout_margin="12dp"-->
+<!--            android:layout_marginBottom="20dp"-->
+<!--            card_view:cardCornerRadius="12dp"-->
+<!--            card_view:cardElevation="6dp">-->
+
+<!--            <LinearLayout-->
+<!--                android:layout_width="match_parent"-->
+<!--                android:layout_height="match_parent"-->
+<!--                android:gravity="center"-->
+<!--                android:orientation="vertical"-->
+<!--                android:padding="16dp">-->
+
+<!--                <LinearLayout-->
+<!--                    android:layout_width="0dp"-->
+<!--                    android:layout_height="0dp"-->
+<!--                    android:focusable="true"-->
+<!--                    android:focusableInTouchMode="true" />-->
+
+<!--                <TextView-->
+<!--                    android:layout_width="wrap_content"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:layout_gravity="center"-->
+<!--                    android:layout_marginBottom="10dp"-->
+<!--                    android:layout_weight="2"-->
+<!--                    android:gravity="center"-->
+<!--                    android:text="S&amp;S"-->
+<!--                    android:textColor="@android:color/black"-->
+<!--                    android:textSize="25sp" />-->
+
+<!--                <TableLayout-->
+<!--                    android:layout_width="match_parent"-->
+<!--                    android:layout_height="match_parent"-->
+<!--                    android:stretchColumns="*">-->
+
+<!--                    <TableRow-->
+<!--                        android:layout_width="0dp"-->
+<!--                        android:layout_marginStart="20dp"-->
+<!--                        android:layout_marginEnd="20dp"-->
+<!--                        android:layout_marginBottom="10dp">-->
+
+<!--                        <TextView-->
+<!--                            android:layout_width="wrap_content"-->
+<!--                            android:layout_height="wrap_content"-->
+<!--                            android:layout_weight="1"-->
+<!--                            android:ems="5"-->
+<!--                            android:text="32. Casillero"-->
+<!--                            android:textSize="18sp" />-->
+
+<!--                        <EditText-->
+<!--                            android:id="@+id/lockerInput"-->
+<!--                            android:layout_width="wrap_content"-->
+<!--                            android:layout_height="wrap_content"-->
+<!--                            android:layout_weight="1"-->
+<!--                            android:backgroundTint="#1774BD"-->
+<!--                            android:maxLength="8"-->
+<!--                            android:hint="Introduzca tarifa"-->
+<!--                            android:inputType="number"-->
+<!--                            android:textCursorDrawable="@null" />-->
+
+<!--                    </TableRow>-->
+
+<!--                </TableLayout>-->
+
+
+<!--                <TableLayout-->
+<!--                    android:layout_width="match_parent"-->
+<!--                    android:layout_height="match_parent"-->
+<!--                    android:stretchColumns="*">-->
+
+<!--                    <TableRow-->
+<!--                        android:layout_width="0dp"-->
+<!--                        android:layout_marginStart="20dp"-->
+<!--                        android:layout_marginEnd="20dp"-->
+<!--                        android:layout_marginBottom="10dp">-->
+
+<!--                        <TextView-->
+<!--                            android:layout_width="wrap_content"-->
+<!--                            android:layout_height="wrap_content"-->
+<!--                            android:layout_weight="1"-->
+<!--                            android:ems="5"-->
+<!--                            android:text="33. Bicicletero"-->
+<!--                            android:textSize="18sp" />-->
+
+<!--                        <EditText-->
+<!--                            android:id="@+id/bicycleParkInput"-->
+<!--                            android:layout_width="wrap_content"-->
+<!--                            android:layout_height="wrap_content"-->
+<!--                            android:layout_weight="1"-->
+<!--                            android:backgroundTint="#1774BD"-->
+<!--                            android:maxLength="8"-->
+<!--                            android:hint="Introduzca tarifa"-->
+<!--                            android:inputType="number"-->
+<!--                            android:textCursorDrawable="@null" />-->
+
+<!--                    </TableRow>-->
+
+<!--                </TableLayout>-->
+
+
+<!--            </LinearLayout>-->
+
+<!--        </androidx.cardview.widget.CardView>-->
+
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -380,6 +487,47 @@
                         android:layout_weight="1"
                         android:gravity="center" />
                 </TableRow>
+
+                <TableRow
+                    android:layout_marginStart="10dp"
+                    android:layout_marginEnd="10dp"
+                    android:layout_marginBottom="10dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Casillero:"
+                        android:textSize="20sp" />
+
+                    <Spinner
+                        android:id="@+id/casillero_tfa_codigo"
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:gravity="center" />
+                </TableRow>
+
+                <TableRow
+                    android:layout_marginStart="10dp"
+                    android:layout_marginEnd="10dp"
+                    android:layout_marginBottom="10dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Bicicletero:"
+                        android:textSize="20sp" />
+
+                    <Spinner
+                        android:id="@+id/bicicletero_tfa_codigo"
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:gravity="center" />
+                </TableRow>
+
             </TableLayout>
 
         </androidx.cardview.widget.CardView>
@@ -559,6 +707,9 @@
             </LinearLayout>
 
         </androidx.cardview.widget.CardView>
+
+
+
 
         <Button
             android:id="@+id/delete_Id"

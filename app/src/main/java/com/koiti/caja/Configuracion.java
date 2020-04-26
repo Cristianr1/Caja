@@ -4,11 +4,9 @@ import android.annotation.SuppressLint;
 import android.app.AlarmManager;
 import android.app.AlertDialog;
 import android.app.PendingIntent;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.res.Configuration;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
@@ -38,7 +36,6 @@ import org.jumpmind.symmetric.android.SymmetricService;
 
 public class Configuracion extends AppCompatActivity implements AdapterView.OnItemSelectedListener {
     private Context context;
-    private Button out, sync;
     EditText codeInput, idInput, estacionInput, ipInput, nodeInput, nodegroupInput, publicadorInput,
             startNum, endNum, preFac, nextFac, consecutiveInput, encabezadoInput, footnoteInput, tituloInput;
 
@@ -48,7 +45,7 @@ public class Configuracion extends AppCompatActivity implements AdapterView.OnIt
     private String publicador = "";
     private String nodeGroup = "";
 
-    Spinner carroTfaCodigo, motoTfaCodigo, biciTfaCodigo;
+    Spinner carroTfaCodigo, motoTfaCodigo, biciTfaCodigo, casiileroTfaCodigo, bicicleteroTfaCodigo;
     ArrayAdapter<String> adapter;
 
     ConfigStorage config = new ConfigStorage();
@@ -101,8 +98,8 @@ public class Configuracion extends AppCompatActivity implements AdapterView.OnIt
         nodegroupInput.addTextChangedListener(stringTextWatcher);
         publicadorInput.addTextChangedListener(stringTextWatcher);
 
-        out = findViewById(R.id.exit_Id);
-        sync = findViewById(R.id.sync_Id);
+        Button out = findViewById(R.id.exit_Id);
+        Button sync = findViewById(R.id.sync_Id);
         out.setOnClickListener(mListener);
         sync.setOnClickListener(mListener);
 
@@ -154,9 +151,14 @@ public class Configuracion extends AppCompatActivity implements AdapterView.OnIt
         carroTfaCodigo = findViewById(R.id.carro_tfa_codigo);
         motoTfaCodigo = findViewById(R.id.moto_tfa_codigo);
         biciTfaCodigo = findViewById(R.id.bicicleta_tfa_codigo);
+        casiileroTfaCodigo = findViewById(R.id.casillero_tfa_codigo);
+        bicicleteroTfaCodigo = findViewById(R.id.bicicletero_tfa_codigo);
+
         carroTfaCodigo.setOnItemSelectedListener(this);
         motoTfaCodigo.setOnItemSelectedListener(this);
         biciTfaCodigo.setOnItemSelectedListener(this);
+        casiileroTfaCodigo.setOnItemSelectedListener(this);
+        bicicleteroTfaCodigo.setOnItemSelectedListener(this);
 
         Tarifas tarifas = new Tarifas();
         ArrayList<String> tfacodigo = tarifas.tfaNombre();
@@ -168,11 +170,16 @@ public class Configuracion extends AppCompatActivity implements AdapterView.OnIt
         carroTfaCodigo.setAdapter(adapter);
         motoTfaCodigo.setAdapter(adapter);
         biciTfaCodigo.setAdapter(adapter);
+        casiileroTfaCodigo.setAdapter(adapter);
+        bicicleteroTfaCodigo.setAdapter(adapter);
+
 
         //Persiste la selección
         carroTfaCodigo.setSelection(config.getValueInt("carro_tfa_codigo", context));
         motoTfaCodigo.setSelection(config.getValueInt("moto_tfa_codigo", context));
         biciTfaCodigo.setSelection(config.getValueInt("bici_tfa_codigo", context));
+        casiileroTfaCodigo.setSelection(config.getValueInt("casillero_tfa_codigo", context));
+        bicicleteroTfaCodigo.setSelection(config.getValueInt("bicicletero_tfa_codigo", context));
 
         addListenerOnIn();
     }
@@ -274,6 +281,12 @@ public class Configuracion extends AppCompatActivity implements AdapterView.OnIt
                 break;
             case R.id.bicicleta_tfa_codigo:
                 config.save(pos, "bici_tfa_codigo", context);
+                break;
+            case R.id.casillero_tfa_codigo:
+                config.save(pos, "casillero_tfa_codigo", context);
+                break;
+            case R.id.bicicletero_tfa_codigo:
+                config.save(pos, "bicicletero_tfa_codigo", context);
                 break;
         }
 

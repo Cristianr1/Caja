@@ -38,7 +38,7 @@ public class Calculos {
     }
 
     @RequiresApi(api = Build.VERSION_CODES.O)
-    public int calculoEntrada(String tfa_codigo, String tdgLiquidacion, boolean mDia) throws ParseException {
+    public int calculoEntrada(String tfa_codigo, String tdgLiquidacion, boolean mDia, int discountTime) throws ParseException {
         String tsgHoraDesde, tsgHoraHasta, tsgCodigoDb, diaDesde, diaHasta;
         String diaEntrada = strDias[ldtEntrada.getDayOfWeek().ordinal()];
         int tiempo = 0;
@@ -86,7 +86,7 @@ public class Calculos {
 
             if (ldtEntrada.isAfter(ldtdesde)) {
                 if (ldtLiquidacion.isBefore(ldthasta)) {
-                    int difMinutos = (int) Duration.between(ldtEntrada, ldtLiquidacion).toMinutes();
+                    int difMinutos = (int) Duration.between(ldtEntrada, ldtLiquidacion).toMinutes() - discountTime;
                     if (difMinutos < 0) difMinutos = 0;
                     resultado += subsegmentos.getEntrada(tfa_codigo, tsgCodigoDb, difMinutos)[0];
                     Log.d("entradaAntes", difMinutos + "---->" + tsgCodigoDb + "---->" + resultado);
@@ -100,7 +100,7 @@ public class Calculos {
                     Log.d("entradaDespues", difMinutos + "---->" + tsgCodigoDb + "---->" + resultado);
                 }
             } else {
-                int difMinutos = (int) Duration.between(ldtdesde, ldtLiquidacion).toMinutes();
+                int difMinutos = (int) Duration.between(ldtdesde, ldtLiquidacion).toMinutes() - discountTime;
                 if (difMinutos < 0) difMinutos = 0;
                 resultado += subsegmentos.getEntrada(tfa_codigo, tsgCodigoDb, difMinutos)[0];
                 tiempo = subsegmentos.getEntrada(tfa_codigo, tsgCodigoDb, difMinutos)[1];
@@ -119,7 +119,7 @@ public class Calculos {
     }
 
     @RequiresApi(api = Build.VERSION_CODES.O)
-    int calculoSalida(String tfa_codigo, String tdgLiquidacion) throws ParseException {
+    int calculoSalida(String tfa_codigo, String tdgLiquidacion, int discountTime) throws ParseException {
         String tsgHoraDesde, tsgHoraHasta, tsgCodigoDb, diaDesde, diaHasta;
         String diaEntrada = strDias[ldtLiquidacion.getDayOfWeek().ordinal()];
         int resultado = 0;
@@ -161,11 +161,13 @@ public class Calculos {
 
             if (ldtLiquidacion.isAfter(ldtdesde)) {
                 if (ldtLiquidacion.isBefore(ldthasta)) {
-                    int difMinutos = (int) Duration.between(ldtdesde, ldtLiquidacion).toMinutes();
+                    int difMinutos = (int) Duration.between(ldtdesde, ldtLiquidacion).toMinutes() - discountTime;
+                    if (difMinutos < 0) difMinutos = 0;
                     resultado += subsegmentos.getEntrada(tfa_codigo, tsgCodigoDb, difMinutos)[0];
                     Log.d("salida 2", difMinutos + "---->" + ldtdesde + "---->" + ldthasta + "--->" + resultado);
                 } else {
-                    int difMinutos = (int) Duration.between(ldtdesde, ldthasta).toMinutes();
+                    int difMinutos = (int) Duration.between(ldtdesde, ldthasta).toMinutes() - discountTime;
+                    if (difMinutos < 0) difMinutos = 0;
                     resultado += subsegmentos.getEntrada(tfa_codigo, tsgCodigoDb, difMinutos)[0];
                     Log.d("salida 1", difMinutos + "---->" + ldtdesde + "---->" + ldthasta + "--->" + resultado);
                 }

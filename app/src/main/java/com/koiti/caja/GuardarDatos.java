@@ -14,9 +14,9 @@ import java.text.SimpleDateFormat;
 
 public class GuardarDatos {
     private String vehId, fechaEntrada, tfaCodigo, tfaNombre, facturaFHEmision, facturaEmision, facturaNumero, usuario,
-            fechaInicioSesion, estacion, prefijo, type, subtotal, impuesto, encabezado, piepagina, liqTipo;
+            fechaInicioSesion, estacion, prefijo, type, subtotal, impuesto, encabezado, piepagina, liqTipo, veh_tipo, nameDiscount;
     private float total, ajuste;
-    private int entregado, cambio;
+    private int entregado, cambio, codeDiscount;
 
     private SQLiteDatabase db = SQLiteOpenHelperRegistry.lookup(DbCajaProvider.DATABASE_NAME).getWritableDatabase();
 
@@ -26,8 +26,8 @@ public class GuardarDatos {
 
     //constructor Facturas
     GuardarDatos(String vehId, String fechaEntrada, String tfaCodigo, String tfaNombre, String facturaNumero, String facturaFHEmision, String facturaEmision,
-                 String usuario, String estacion, String fechaInicioSesion, String prefijo,
-                 float total, float subtotal, float impuesto, int entregado, int cambio, String type, String encabezado, String piepagina, String liqTipo) {
+                 String usuario, String estacion, String fechaInicioSesion, String prefijo, float total, float subtotal, float impuesto,
+                 int entregado, int cambio, String type, String encabezado, String piepagina, String liqTipo, String veh_tipo, int codeDiscount, String nameDiscount) {
         this.vehId = vehId;
         this.fechaEntrada = fechaEntrada;
         this.tfaCodigo = tfaCodigo;
@@ -49,6 +49,9 @@ public class GuardarDatos {
         this.encabezado = encabezado;
         this.piepagina = piepagina;
         this.liqTipo = liqTipo;
+        this.veh_tipo = veh_tipo;
+        this.codeDiscount = codeDiscount;
+        this.nameDiscount = nameDiscount;
     }
 
     @SuppressLint("DefaultLocale")
@@ -126,7 +129,7 @@ public class GuardarDatos {
         register.put("veh_fh_entrada", fechaEntrada);
         register.put("veh_estacion", estacion);
         register.put("veh_usuario", "SISTEMA");
-        register.put("veh_tipo", "Normal");
+        register.put("veh_tipo", veh_tipo);
         register.put("veh_robado", "N");
         register.put("veh_purgado", "N");
         register.put("veh_dir_entrada", "1");
@@ -153,5 +156,16 @@ public class GuardarDatos {
         registerInsert.put("caj_dinero_entregado", entregado);
         registerInsert.put("caj_cambio", cambio);
         db.insert("tb_caja", null, registerInsert);
+    }
+
+    public void tbLiqDescuentos() {
+        ContentValues registerInsert = new ContentValues();
+        registerInsert.put("lds_liq_veh_id", vehId);
+        registerInsert.put("lds_liq_veh_fh_entrada", fechaEntrada);
+        registerInsert.put("lds_liq_fh_liquidacion", facturaEmision);
+        registerInsert.put("lds_com_codigo", codeDiscount);
+        registerInsert.put("lds_com_nombre", nameDiscount);
+        registerInsert.put("lds_valor", total);
+        db.insert("tb_liq_descuentos", null, registerInsert);
     }
 }

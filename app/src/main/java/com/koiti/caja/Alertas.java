@@ -16,7 +16,7 @@ public class Alertas extends AppCompatActivity {
 
     private Context context;
 
-    Alertas(Context context){
+    Alertas(Context context) {
         this.context = context;
     }
 
@@ -55,7 +55,7 @@ public class Alertas extends AppCompatActivity {
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
 
         builder.setTitle("Tiempo para salir")
-                .setMessage("Quedan "+minutosRestantes+" minutos para salir del parqueadero")
+                .setMessage("Quedan " + minutosRestantes + " minutos para salir del parqueadero")
                 .setPositiveButton("OK",
                         new DialogInterface.OnClickListener() {
                             @Override
@@ -66,4 +66,19 @@ public class Alertas extends AppCompatActivity {
         return builder.create();
     }
 
+
+    public AlertDialog alertaMensuales() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+
+        builder.setTitle("Atención")
+                .setMessage("La fecha ha caducado, por favor contacte con administración.")
+                .setPositiveButton("OK",
+                        new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                            }
+                        });
+
+        return builder.create();
+    }
 }
